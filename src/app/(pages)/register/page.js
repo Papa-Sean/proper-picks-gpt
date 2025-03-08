@@ -16,6 +16,7 @@ export default function Register() {
 	});
 	const [errors, setErrors] = useState({});
 	const [loading, setLoading] = useState(false);
+	const [isModalOpen, setIsModalOpen] = useState(false);
 
 	const validateForm = () => {
 		const newErrors = {};
@@ -118,6 +119,45 @@ export default function Register() {
 						>
 							{loading ? 'Creating account...' : 'Create account'}
 						</button>
+
+						{/* Add Disclaimer Button */}
+						<button
+							type='button'
+							onClick={() => setIsModalOpen(true)}
+							className='btn btn-warning btn-block mt-3'
+						>
+							View Disclaimer
+						</button>
+
+						{/* Disclaimer Modal */}
+						{isModalOpen && (
+							<div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+								<div className='bg-white dark:bg-gray-800 rounded-lg p-8 max-w-sm w-full mx-4 shadow-xl'>
+									<div className='text-center'>
+										<h3 className='text-xl font-semibold mb-4 dark:text-white'>
+											Important Disclaimer
+										</h3>
+										<p className='mb-6 text-gray-600 dark:text-gray-300'>
+											I am pretty confident your data is
+											safe because I'll be honest, I
+											didn't write the code... If you
+											trust Google, thats who is handling
+											the ether but I also don't need to
+											verify your email so dummy creds are
+											just fine! Thx gang
+										</p>
+										<button
+											onClick={() =>
+												setIsModalOpen(false)
+											}
+											className='bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200'
+										>
+											Heard
+										</button>
+									</div>
+								</div>
+							</div>
+						)}
 					</form>
 					<div className='mt-6 text-center'>
 						<Link

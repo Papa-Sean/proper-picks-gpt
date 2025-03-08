@@ -74,7 +74,7 @@ export default function Home() {
 					</p>
 					<button
 						onClick={() => setIsModalOpen(true)}
-						className='bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200'
+						className='btn btn-warning font-semibold py-3 px-8 rounded-lg transition-colors duration-200'
 					>
 						Don't Click
 					</button>
