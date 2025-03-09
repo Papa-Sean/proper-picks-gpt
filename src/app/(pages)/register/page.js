@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AuthInput from '@/components/AuthInput';
 import { useAuth } from '@/hooks/useAuth';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 export default function Register() {
 	const router = useRouter();
-	const { signup } = useAuth();
+	const { signup, signInWithGoogle } = useAuth();
 	const [formData, setFormData] = useState({
 		email: '',
 		password: '',
@@ -66,6 +67,17 @@ export default function Register() {
 		}
 	};
 
+	const handleGoogleSignIn = async () => {
+		try {
+			await signInWithGoogle();
+			router.push('/data-dashboard');
+		} catch (err) {
+			setErrors({
+				submit: 'Failed to sign in with Google. Please try again.',
+			});
+		}
+	};
+
 	return (
 		<div className='min-h-screen bg-base-100 py-8 px-4 sm:px-6 lg:px-8'>
 			<div className='max-w-7xl mx-auto'>
@@ -119,7 +131,20 @@ export default function Register() {
 						>
 							{loading ? 'Creating account...' : 'Create account'}
 						</button>
-
+						<div className='relative my-4'>
+							<div className='absolute inset-0 flex items-center'>
+								<div className='w-full border-t border-gray-300'></div>
+							</div>
+							<div className='relative flex justify-center text-sm'>
+								<span className='px-2 bg-white dark:bg-gray-800 text-gray-500'>
+									Or
+								</span>
+							</div>
+						</div>
+						<GoogleSignInButton
+							onClick={handleGoogleSignIn}
+							disabled={loading}
+						/>
 						{/* Add Disclaimer Button */}
 						<button
 							type='button'
