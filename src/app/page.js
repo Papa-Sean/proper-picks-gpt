@@ -27,7 +27,7 @@ export default function Home() {
 						Welcome to Proper Picks
 					</h1>
 					<p className='text-xl sm:text-2xl text-gray-600 dark:text-gray-300'>
-						Making dumb data look smart since 1984
+						Making smart data look dumb since 1984
 					</p>
 				</div>
 
