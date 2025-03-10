@@ -1,32 +1,49 @@
 import { NextResponse } from 'next/server';
-import knex from 'knex';
-
-const db = knex({
-	client: 'mysql2',
-	connection: {
-		host: process.env.DB_HOST,
-		user: process.env.DB_USER,
-		password: process.env.DB_PASSWORD,
-		database: process.env.DB_NAME,
-		port: process.env.DB_PORT,
-	},
-});
+import prisma from '@/lib/prisma';
 
 export async function GET(request) {
 	try {
 		const { searchParams } = new URL(request.url);
 		const userId = searchParams.get('userId');
+		const bracketId = searchParams.get('id');
 
-		const query = db('user_brackets')
-			.select('user_brackets.*', 'ai_models.name as model_name')
-			.leftJoin('ai_models', 'user_brackets.ai_model_id', 'ai_models.id')
-			.orderBy('created_at', 'desc');
+		if (bracketId) {
+			const bracket = await prisma.bracket.findUnique({
+				where: {
+					id: parseInt(bracketId),
+				},
+				include: {
+					aiModel: true,
+					leaderboard: true,
+					bracketPicks: {
+						include: {
+							game: true,
+							predictedWinner: true,
+						},
+					},
+				},
+			});
 
-		if (userId) {
-			query.where('user_id', userId);
+			if (!bracket) {
+				return NextResponse.json(
+					{ error: 'Bracket not found' },
+					{ status: 404 }
+				);
+			}
+			return NextResponse.json(bracket);
 		}
 
-		const brackets = await query;
+		const brackets = await prisma.bracket.findMany({
+			where: userId ? { userId } : undefined,
+			include: {
+				aiModel: true,
+				leaderboard: true,
+			},
+			orderBy: {
+				createdAt: 'desc',
+			},
+		});
+
 		return NextResponse.json({ brackets });
 	} catch (error) {
 		console.error('GET /api/brackets error:', error);
@@ -41,22 +58,58 @@ export async function POST(request) {
 	try {
 		const body = await request.json();
 
-		const [id] = await db('user_brackets').insert({
-			user_id: body.userId,
-			bracket_type: body.bracketType,
-			ai_model_id: body.aiModelId,
-			picks: JSON.stringify(body.picks || {}),
-			round_scores: JSON.stringify({
-				round1: 0,
-				round2: 0,
-				sweet16: 0,
-				elite8: 0,
-				finalFour: 0,
-				championship: 0,
-			}),
-		});
+		// Validate required fields
+		if (!body.name || !body.userId) {
+			return NextResponse.json(
+				{ error: 'Name and userId are required' },
+				{ status: 400 }
+			);
+		}
 
-		return NextResponse.json({ id, success: true });
+		// Start transaction
+		const trx = await db.transaction();
+
+		try {
+			// Create bracket
+			const [bracketId] = await trx('brackets').insert({
+				name: body.name,
+				user_id: body.userId,
+				bracket_type: body.type || 'manual',
+				ai_model_id: body.aiModelId,
+				picks: JSON.stringify(body.picks || {}),
+				status: 'pending',
+				round_scores: JSON.stringify({
+					round1: 0,
+					round2: 0,
+					sweet16: 0,
+					elite8: 0,
+					finalFour: 0,
+					championship: 0,
+				}),
+			});
+
+			// Initialize leaderboard entry
+			await trx('leaderboards').insert({
+				bracket_id: bracketId,
+				total_score: 0,
+				correct_picks: 0,
+				incorrect_picks: 0,
+				round_scores: JSON.stringify({
+					round1: 0,
+					round2: 0,
+					sweet16: 0,
+					elite8: 0,
+					finalFour: 0,
+					championship: 0,
+				}),
+			});
+
+			await trx.commit();
+			return NextResponse.json({ id: bracketId, success: true });
+		} catch (error) {
+			await trx.rollback();
+			throw error;
+		}
 	} catch (error) {
 		console.error('POST /api/brackets error:', error);
 		return NextResponse.json(
@@ -70,18 +123,49 @@ export async function PUT(request) {
 	try {
 		const body = await request.json();
 
-		await db('user_brackets')
-			.where('id', body.id)
-			.update({
-				picks: JSON.stringify(body.picks || {}),
-				total_score: body.totalScore,
-				round_scores: JSON.stringify(body.roundScores || {}),
-			});
+		if (!body.id) {
+			return NextResponse.json(
+				{ error: 'Bracket ID is required' },
+				{ status: 400 }
+			);
+		}
 
-		return NextResponse.json({ success: true });
+		const trx = await db.transaction();
+
+		try {
+			await trx('brackets')
+				.where('id', body.id)
+				.update({
+					picks: JSON.stringify(body.picks || {}),
+					status: body.status || 'pending',
+					round_scores: JSON.stringify(body.roundScores || {}),
+				});
+
+			if (body.leaderboard) {
+				await trx('leaderboards')
+					.where('bracket_id', body.id)
+					.update({
+						total_score: body.leaderboard.totalScore || 0,
+						correct_picks: body.leaderboard.correctPicks || 0,
+						incorrect_picks: body.leaderboard.incorrectPicks || 0,
+						round_scores: JSON.stringify(
+							body.leaderboard.roundScores || {}
+						),
+					});
+			}
+
+			await trx.commit();
+			return NextResponse.json({ success: true });
+		} catch (error) {
+			await trx.rollback();
+			throw error;
+		}
 	} catch (error) {
 		console.error('PUT /api/brackets error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		return NextResponse.json(
+			{ error: 'Failed to update bracket' },
+			{ status: 500 }
+		);
 	}
 }
 
@@ -90,59 +174,32 @@ export async function DELETE(request) {
 		const { searchParams } = new URL(request.url);
 		const id = searchParams.get('id');
 
-		await db('user_brackets').where('id', id).delete();
-
-		return NextResponse.json({ success: true });
-	} catch (error) {
-		console.error('DELETE /api/brackets error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
-	}
-}
-
-export async function PATCH(request) {
-	try {
-		const body = await request.json();
-		const bracketId = body.bracketId;
-
-		const bracket = await db('user_brackets')
-			.where('id', bracketId)
-			.first();
-
-		if (!bracket) {
+		if (!id) {
 			return NextResponse.json(
-				{ error: 'Bracket not found' },
-				{ status: 404 }
+				{ error: 'Bracket ID is required' },
+				{ status: 400 }
 			);
 		}
 
-		const picks = JSON.parse(bracket.picks);
-		let totalScore = 0;
-		const roundScores = {
-			round1: 0,
-			round2: 0,
-			sweet16: 0,
-			elite8: 0,
-			finalFour: 0,
-			championship: 0,
-		};
+		const trx = await db.transaction();
 
-		// Calculate scores based on actual tournament results
-		// This is a placeholder for the actual scoring logic
+		try {
+			// Delete related records first
+			await trx('leaderboards').where('bracket_id', id).delete();
+			await trx('bracket_picks').where('bracket_id', id).delete();
+			await trx('brackets').where('id', id).delete();
 
-		await db('user_brackets')
-			.where('id', bracketId)
-			.update({
-				total_score: totalScore,
-				round_scores: JSON.stringify(roundScores),
-			});
-
-		return NextResponse.json({
-			success: true,
-			totalScore,
-			roundScores,
-		});
+			await trx.commit();
+			return NextResponse.json({ success: true });
+		} catch (error) {
+			await trx.rollback();
+			throw error;
+		}
 	} catch (error) {
-		console.error('PATCH /api/brackets error:', error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
+		console.error('DELETE /api/brackets error:', error);
+		return NextResponse.json(
+			{ error: 'Failed to delete bracket' },
+			{ status: 500 }
+		);
 	}
 }

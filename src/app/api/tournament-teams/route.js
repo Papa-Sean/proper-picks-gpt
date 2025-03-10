@@ -1,23 +1,19 @@
 import { NextResponse } from 'next/server';
-import knex from 'knex';
-
-const db = knex({
-	client: 'mysql2',
-	connection: {
-		host: process.env.DB_HOST,
-		user: process.env.DB_USER,
-		password: process.env.DB_PASSWORD,
-		database: process.env.DB_NAME,
-		port: process.env.DB_PORT,
-	},
-});
+import prisma from '@/lib/prisma';
 
 export async function GET() {
 	try {
-		const teams = await db('tournament_teams')
-			.select('*')
-			.orderBy('region', 'asc')
-			.orderBy('seed', 'asc');
+		const teams = await prisma.team.findMany({
+			orderBy: [{ region: 'asc' }, { seed: 'asc' }],
+			include: {
+				_count: {
+					select: {
+						gamesWon: true,
+						bracketPicks: true,
+					},
+				},
+			},
+		});
 
 		return NextResponse.json({ teams });
 	} catch (error) {
@@ -33,18 +29,18 @@ export async function POST(request) {
 	try {
 		const body = await request.json();
 
-		const [id] = await db('tournament_teams').insert({
-			name: body.name,
-			seed: body.seed,
-			region: body.region,
-			year: body.year,
-			stats: JSON.stringify(body.stats || {}),
-			historical_performance: JSON.stringify(
-				body.historical_performance || {}
-			),
+		const team = await prisma.team.create({
+			data: {
+				name: body.name,
+				seed: body.seed,
+				region: body.region,
+				year: body.year,
+				stats: body.stats || {},
+				historicalPerformance: body.historical_performance || {},
+			},
 		});
 
-		return NextResponse.json({ id, success: true });
+		return NextResponse.json({ id: team.id, success: true });
 	} catch (error) {
 		console.error('POST /api/tournament-teams error:', error);
 		return NextResponse.json(

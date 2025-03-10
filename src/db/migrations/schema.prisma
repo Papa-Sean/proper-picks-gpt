@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Team {
+  id                  Int            @id @default(autoincrement())
+  name                String
+  seed                String
+  region              String
+  year                Int
+  stats               Json?
+  historicalPerformance Json?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  gamesAsTeam1        Game[]         @relation("Team1Games")
+  gamesAsTeam2        Game[]         @relation("Team2Games")
+  gamesWon            Game[]         @relation("GameWinner")
+  bracketPicks        BracketPick[]  @relation("PredictedTeam")
+}
+
+model AIModel {
+  id                  Int            @id @default(autoincrement())
+  name                String
+  configuration       Json?
+  trainingParameters  Json?
+  performanceMetrics  Json?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  brackets            Bracket[]
+  trainingData        ModelTrainingData[]
+}
+
+model Game {
+  id                  Int            @id @default(autoincrement())
+  team1Id             Int
+  team2Id             Int
+  winnerId            Int?
+  round               Int
+  gameDate            DateTime?
+  stats               Json?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  team1               Team           @relation("Team1Games", fields: [team1Id], references: [id], onDelete: Cascade)
+  team2               Team           @relation("Team2Games", fields: [team2Id], references: [id], onDelete: Cascade)
+  winner              Team?          @relation("GameWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  bracketPicks        BracketPick[]
+}
+
+model Bracket {
+  id                  Int            @id @default(autoincrement())
+  name                String
+  userId              String
+  bracketType         BracketType
+  aiModelId           Int?
+  picks               Json?
+  status              String         @default("pending")
+  roundScores         Json?
+  isActive            Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  aiModel             AIModel?       @relation(fields: [aiModelId], references: [id], onDelete: SetNull)
+  bracketPicks        BracketPick[]
+  leaderboard         Leaderboard?
+}
+
+model BracketPick {
+  id                  Int            @id @default(autoincrement())
+  bracketId           Int
+  gameId              Int
+  predictedWinnerId   Int
+  isCorrect           Boolean?
+  pointsEarned        Int            @default(0)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  bracket             Bracket        @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  game                Game           @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  predictedWinner     Team           @relation("PredictedTeam", fields: [predictedWinnerId], references: [id], onDelete: Cascade)
+}
+
+model Leaderboard {
+  id                  Int            @id @default(autoincrement())
+  bracketId           Int            @unique
+  totalScore          Int            @default(0)
+  correctPicks        Int            @default(0)
+  incorrectPicks      Int            @default(0)
+  roundScores         Json?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  bracket             Bracket        @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+}
+
+model ModelTrainingData {
+  modelId             Int
+  gameId              Int
+  trainingData        Json?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  model               AIModel        @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  game                Game          @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@id([modelId, gameId])
+}
+
+enum BracketType {
+  MANUAL
+  AI_ASSISTED
+}
