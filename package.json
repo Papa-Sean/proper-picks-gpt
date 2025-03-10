@@ -8,7 +8,8 @@
 		"start": "next start",
 		"lint": "next lint",
 		"migrate": "knex migrate:latest",
-		"migrate:rollback": "knex migrate:rollback"
+		"migrate:rollback": "knex migrate:rollback",
+		"seed": "knex seed:run"
 	},
 	"dependencies": {
 		"@headlessui/react": "^2.2.0",
