@@ -1,1 +1,5 @@
+# Redirects all routes to the index.html file for SPA client-side routing
 /*    /index.html   200
+
+# Exclude API routes from the SPA redirect
+/api/*  /api/:splat  200

@@ -86,6 +86,51 @@ export default function Login() {
 		}
 	};
 
+	const handleLoginSubmit = async (e) => {
+		e.preventDefault();
+		const newErrors = validateForm();
+
+		if (Object.keys(newErrors).length === 0) {
+			setLoading(true);
+			try {
+				console.log('Attempting login with:', formData.email);
+
+				// Flag to prevent double redirects (client-side only)
+				if (typeof window !== 'undefined') {
+					window.sessionStorage.setItem('loginInProgress', 'true');
+				}
+
+				await login(formData.email, formData.password);
+				console.log('Login API call succeeded');
+
+				// Clear any redirect markers
+				if (typeof window !== 'undefined') {
+					localStorage.removeItem('redirectStarted');
+				}
+
+				// Get redirect destination
+				const redirectUrl = getRedirectUrl() || '/data-dashboard';
+				console.log('Will redirect to:', redirectUrl);
+
+				// For Netlify, use a simple redirect with slight delay
+				setTimeout(() => {
+					window.location.href = redirectUrl;
+				}, 500);
+			} catch (err) {
+				console.error('Login failed:', err);
+				setErrors({
+					submit: 'Failed to login. Please check your credentials.',
+				});
+				if (typeof window !== 'undefined') {
+					window.sessionStorage.removeItem('loginInProgress');
+				}
+				setLoading(false);
+			}
+		} else {
+			setErrors(newErrors);
+		}
+	};
+
 	const validateForm = () => {
 		const newErrors = {};
 		if (!formData.email) newErrors.email = 'Email is required';
