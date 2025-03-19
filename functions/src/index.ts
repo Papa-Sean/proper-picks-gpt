@@ -8,7 +8,7 @@
  */
 
 // Export the menuSuggestion function from genkit-sample
-export * from './genkit-sample';
+export * from './genkit-sample.js';
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
