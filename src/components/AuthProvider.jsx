@@ -18,6 +18,15 @@ export default function AuthProvider({ children }) {
 
 		// Only check after auth state is loaded
 		if (!isLoading) {
+			// If user is authenticated but on login page, redirect to dashboard
+			if (isAuthenticated && pathname === '/login') {
+				console.log(
+					'User already authenticated, redirecting to dashboard'
+				);
+				router.push('/data-dashboard');
+				return;
+			}
+
 			// If user is not authenticated and tries to access a private route
 			if (!isAuthenticated && !isPublicRoute) {
 				console.log('User not authenticated, redirecting to login');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AuthInput from '@/components/AuthInput';
@@ -16,13 +16,26 @@ export default function Login() {
 	});
 	const [errors, setErrors] = useState({});
 	const [loading, setLoading] = useState(false);
+	const [redirectAttempted, setRedirectAttempted] = useState(false);
 
-	const validateForm = () => {
-		const newErrors = {};
-		if (!formData.email) newErrors.email = 'Email is required';
-		if (!formData.password) newErrors.password = 'Password is required';
-		return newErrors;
-	};
+	// Extract getRedirectUrl as a proper function with useCallback
+	const getRedirectUrl = useCallback(() => {
+		if (typeof window === 'undefined') return '/data-dashboard';
+
+		// First check URL params
+		const params = new URLSearchParams(window.location.search);
+		const urlRedirect = params.get('redirect') || params.get('callbackUrl');
+
+		// Then check session storage
+		const sessionRedirect = sessionStorage.getItem('authRedirect');
+
+		// Clear session storage redirect
+		if (sessionRedirect) {
+			sessionStorage.removeItem('authRedirect');
+		}
+
+		return urlRedirect || sessionRedirect || '/data-dashboard';
+	}, []);
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -32,20 +45,30 @@ export default function Login() {
 			setLoading(true);
 			try {
 				console.log('Attempting login with:', formData.email);
-				await login(formData.email, formData.password);
-				console.log('Login succeeded, will redirect soon');
 
-				// Let the auth state update before redirecting
+				// Flag to prevent double redirects
+				sessionStorage.setItem('loginInProgress', 'true');
+
+				await login(formData.email, formData.password);
+				console.log('Login API call succeeded');
+
+				// Get redirect destination
+				const redirectUrl = getRedirectUrl();
+				console.log('Will redirect to:', redirectUrl);
+
+				// Safe redirect with a timeout to allow state to update
 				setTimeout(() => {
-					// Check for redirect URL in query params or session storage
-					const redirectUrl = getRedirectUrl();
-					router.push(redirectUrl || '/data-dashboard');
+					sessionStorage.removeItem('loginInProgress');
+
+					// Force navigation with window.location
+					window.location.href = redirectUrl;
 				}, 500);
 			} catch (err) {
 				console.error('Login failed:', err);
 				setErrors({
 					submit: 'Failed to login. Please check your credentials.',
 				});
+				sessionStorage.removeItem('loginInProgress');
 				setLoading(false);
 			}
 		} else {
@@ -53,24 +76,11 @@ export default function Login() {
 		}
 	};
 
-	const getRedirectUrl = () => {
-		if (typeof window !== 'undefined') {
-			// First check URL params
-			const params = new URLSearchParams(window.location.search);
-			const urlRedirect =
-				params.get('redirect') || params.get('callbackUrl');
-
-			// Then check session storage
-			const sessionRedirect = sessionStorage.getItem('authRedirect');
-
-			// Clear session storage redirect
-			if (sessionRedirect) {
-				sessionStorage.removeItem('authRedirect');
-			}
-
-			return urlRedirect || sessionRedirect || '/data-dashboard';
-		}
-		return '/data-dashboard';
+	const validateForm = () => {
+		const newErrors = {};
+		if (!formData.email) newErrors.email = 'Email is required';
+		if (!formData.password) newErrors.password = 'Password is required';
+		return newErrors;
 	};
 
 	const handleChange = (e) => {
@@ -91,30 +101,56 @@ export default function Login() {
 	const handleGoogleSignIn = async () => {
 		try {
 			setLoading(true);
-			await signInWithGoogle();
+			console.log('Attempting Google sign-in');
 
-			// Let the auth state update before redirecting
+			// Set login in progress flag
+			sessionStorage.setItem('loginInProgress', 'true');
+
+			await signInWithGoogle();
+			console.log('Google sign-in succeeded');
+
+			// Get redirect URL
+			const redirectUrl = getRedirectUrl();
+			console.log('Will redirect to:', redirectUrl);
+
+			// Use a direct page navigation rather than Next.js router
 			setTimeout(() => {
-				const redirectUrl = getRedirectUrl();
-				router.push(redirectUrl || '/data-dashboard');
+				sessionStorage.removeItem('loginInProgress');
+				window.location.href = redirectUrl;
 			}, 500);
 		} catch (err) {
 			console.error('Google sign-in failed:', err);
 			setErrors({
 				submit: 'Failed to sign in with Google. Please try again.',
 			});
+			sessionStorage.removeItem('loginInProgress');
 			setLoading(false);
 		}
 	};
 
-	// If already logged in, redirect
+	// Handle authenticated users already on the login page
 	useEffect(() => {
-		if (!isLoading && isAuthenticated) {
-			const redirectUrl = getRedirectUrl();
-			router.push(redirectUrl || '/data-dashboard');
-		}
-	}, [isAuthenticated, isLoading, router]);
+		// Only run this once to prevent infinite loops
+		if (redirectAttempted) return;
 
+		// Make sure we have auth state and aren't in the middle of logging in
+		const inLoginProcess =
+			typeof window !== 'undefined' &&
+			sessionStorage.getItem('loginInProgress');
+
+		if (!isLoading && isAuthenticated && !inLoginProcess) {
+			console.log('Already authenticated, redirecting from login page');
+			setRedirectAttempted(true);
+
+			// Simple timeout to ensure this runs after all other effects
+			setTimeout(() => {
+				const destination = getRedirectUrl();
+				window.location.href = destination;
+			}, 100);
+		}
+	}, [isAuthenticated, isLoading, getRedirectUrl, redirectAttempted]);
+
+	// Rest of your component (no changes needed)
 	return (
 		<div className='min-h-screen bg-base-100 py-8 px-4 sm:px-6 lg:px-8'>
 			<div className='max-w-7xl mx-auto'>
@@ -158,7 +194,14 @@ export default function Login() {
 							disabled={loading}
 							className='btn btn-primary btn-block mt-6'
 						>
-							{loading ? 'Signing in...' : 'Sign in'}
+							{loading ? (
+								<div className='flex items-center justify-center'>
+									<span className='loading loading-spinner loading-sm mr-2'></span>
+									Signing in...
+								</div>
+							) : (
+								'Sign in'
+							)}
 						</button>
 						<div className='relative my-4'>
 							<div className='absolute inset-0 flex items-center'>
