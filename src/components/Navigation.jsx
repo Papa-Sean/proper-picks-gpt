@@ -1,92 +1,340 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation'; // Add useRouter
 import { useSelector } from 'react-redux';
+import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Disclosure } from '@headlessui/react';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import NavLink from './NavLink';
 
 export default function Navigation() {
+	const pathname = usePathname();
+	const router = useRouter(); // Add router
+	const { user, logout } = useAuth();
 	const { isAuthenticated } = useSelector((state) => state.auth);
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const [isLoggingOut, setIsLoggingOut] = useState(false); // Add loading state
 
-	const navigation = isAuthenticated
-		? [
-				{ name: 'Home', href: '/' },
-				{ name: 'Dashboard', href: '/data-dashboard' },
-				{ name: 'Sign Out', href: '/signout' },
-		  ]
-		: [
-				{ name: 'Home', href: '/' },
-				{ name: 'Login', href: '/login' },
-				{ name: 'Register', href: '/register' },
-		  ];
+	// Close mobile menu when route changes
+	useEffect(() => {
+		setIsMenuOpen(false);
+	}, [pathname]);
+
+	const isActive = (path) => pathname === path;
+
+	// Update handleSignOut in Navigation.jsx
+const handleSignOut = async () => {
+	try {
+	  setIsLoggingOut(true);
+	  console.log('Navigation: Starting logout process');
+	  
+	  // Clear localStorage manually as a backup
+	  if (typeof window !== 'undefined') {
+		localStorage.removeItem('auth');
+	  }
+	  
+	  // Call the logout function from your auth hook
+	  await logout();
+	  
+	  console.log('Navigation: Logout successful, redirecting');
+	  
+	  // Add a slight delay to ensure state updates
+	  setTimeout(() => {
+		router.push('/login');
+	  }, 500);
+	} catch (error) {
+	  console.error('Error signing out:', error);
+	  alert('Failed to sign out. Please try again.');
+	} finally {
+	  setIsLoggingOut(false);
+	}
+  };
+
+	// Navigation items
+	const navItems = [
+		{ path: '/', label: 'Home', requiresAuth: false },
+		{ path: '/data-dashboard', label: 'Dashboard', requiresAuth: true },
+		{
+			path: '/brackets/create',
+			label: 'Create Bracket',
+			requiresAuth: true,
+		},
+		{
+			path: '/brackets/leaderboard',
+			label: 'Leaderboard',
+			requiresAuth: true,
+		},
+		{ path: '/brackets/view', label: 'My Brackets', requiresAuth: true },
+	];
 
 	return (
-		<Disclosure
-			as='nav'
-			className='bg-gray-800'
-		>
-			{({ open }) => (
-				<>
-					<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-						<div className='flex items-center justify-between h-16'>
-							<div className='flex items-center'>
-								<div className='flex-shrink-0'>
-									<Link
-										href='/'
-										className='text-white font-bold'
-									>
-										<Image
-											src='/papaavatar.svg'
-											alt='Papa Avatar Logo'
-											width={40}
-											height={40}
-											className='h-10 w-auto'
-										/>
-									</Link>
-								</div>
-								<div className='hidden md:block'>
-									<div className='ml-10 flex items-baseline space-x-4'>
-										{navigation.map((item) => (
-											<Link
-												key={item.name}
-												href={item.href}
-												className='text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-											>
-												{item.name}
-											</Link>
-										))}
-									</div>
-								</div>
-							</div>
-							<div className='-mr-2 flex md:hidden'>
-								<Disclosure.Button className='inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white'>
-									{open ? (
-										<XMarkIcon className='h-6 w-6' />
-									) : (
-										<Bars3Icon className='h-6 w-6' />
-									)}
-								</Disclosure.Button>
-							</div>
-						</div>
+		<div className='sticky top-0 z-50'>
+			{/* Main Navbar - Single Row */}
+			<div className='navbar bg-base-100 shadow-md'>
+				<div className='container mx-auto px-4 flex items-center justify-between'>
+					{/* Left section with logo */}
+					<div className='flex-none'>
+						<Link
+							href='/'
+							className='btn btn-ghost normal-case text-xl'
+						>
+							Proper Picks
+						</Link>
 					</div>
 
-					<Disclosure.Panel className='md:hidden'>
-						<div className='px-2 pt-2 pb-3 space-y-1 sm:px-3'>
-							{navigation.map((item) => (
-								<Link
-									key={item.name}
-									href={item.href}
-									className='text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium'
-								>
-									{item.name}
-								</Link>
-							))}
+					{/* Middle section with navigation items - desktop only */}
+					<div className='hidden md:flex flex-1 justify-center'>
+						<ul className='menu menu-horizontal px-1'>
+							{navItems.map(
+								(item) =>
+									(!item.requiresAuth || isAuthenticated) && (
+										<li key={item.path}>
+											<NavLink
+												href={item.path}
+												requiresAuth={item.requiresAuth}
+												className={
+													isActive(item.path)
+														? 'active font-bold'
+														: ''
+												}
+											>
+												{item.label}
+											</NavLink>
+										</li>
+									)
+							)}
+						</ul>
+					</div>
+
+					{/* Right section with auth buttons */}
+					<div className='flex-none flex items-center gap-2'>
+						{/* Auth buttons - desktop */}
+						<div className='hidden md:flex gap-2'>
+							{isAuthenticated ? (
+								<div className='dropdown dropdown-end'>
+									<label
+										tabIndex={0}
+										className='btn btn-ghost btn-circle avatar'
+									>
+										<div className='w-10 rounded-full'>
+											<img
+												src={
+													user?.photoURL ||
+													'/papaavatar.svg'
+												}
+												alt={
+													user?.displayName ||
+													'User avatar'
+												}
+											/>
+										</div>
+									</label>
+									<ul
+										tabIndex={0}
+										className='mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52 z-10'
+									>
+										<li>
+											<Link href='/profile'>Profile</Link>
+										</li>
+										<li>
+											<Link href='/brackets/view'>
+												My Brackets
+											</Link>
+										</li>
+										<li>
+											<button
+												onClick={handleSignOut}
+												disabled={isLoggingOut}
+												className='text-error'
+											>
+												{isLoggingOut
+													? 'Signing Out...'
+													: 'Sign Out'}
+											</button>
+										</li>
+									</ul>
+								</div>
+							) : (
+								<>
+									<Link
+										href='/login'
+										className='btn btn-ghost'
+									>
+										Log in
+									</Link>
+									<Link
+										href='/login?signup=true'
+										className='btn btn-primary'
+									>
+										Sign up
+									</Link>
+								</>
+							)}
 						</div>
-					</Disclosure.Panel>
-				</>
+
+						{/* Sign-out button (visible only when logged in) */}
+						{isAuthenticated && (
+							<div className='hidden md:block'>
+								<button
+									onClick={handleSignOut}
+									disabled={isLoggingOut}
+									className='btn btn-sm btn-error btn-outline'
+								>
+									{isLoggingOut ? (
+										<>
+											<span className='loading loading-spinner loading-xs mr-2'></span>
+											Signing Out
+										</>
+									) : (
+										'Sign Out'
+									)}
+								</button>
+							</div>
+						)}
+
+						{/* Mobile menu button */}
+						<div className='md:hidden'>
+							<button
+								className='btn btn-square btn-ghost'
+								onClick={() => setIsMenuOpen(!isMenuOpen)}
+							>
+								<svg
+									xmlns='http://www.w3.org/2000/svg'
+									fill='none'
+									viewBox='0 0 24 24'
+									className='inline-block w-6 h-6 stroke-current'
+								>
+									{isMenuOpen ? (
+										<path
+											strokeLinecap='round'
+											strokeLinejoin='round'
+											strokeWidth='2'
+											d='M6 18L18 6M6 6l12 12'
+										/>
+									) : (
+										<path
+											strokeLinecap='round'
+											strokeLinejoin='round'
+											strokeWidth='2'
+											d='M4 6h16M4 12h16M4 18h16'
+										/>
+									)}
+								</svg>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{/* Mobile Navigation Menu - Appears below navbar */}
+			{isMenuOpen && (
+				<div className='md:hidden bg-base-100 shadow-lg border-t border-base-300 z-40'>
+					<ul className='menu p-4'>
+						{navItems.map(
+							(item) =>
+								(!item.requiresAuth || isAuthenticated) && (
+									<li key={item.path}>
+										<NavLink
+											href={item.path}
+											requiresAuth={item.requiresAuth}
+											className={
+												isActive(item.path)
+													? 'active font-bold'
+													: ''
+											}
+										>
+											{item.label}
+										</NavLink>
+									</li>
+								)
+						)}
+
+						{/* Auth Links for Mobile */}
+						<div className='divider my-2'></div>
+						{isAuthenticated ? (
+							<>
+								<li>
+									<Link
+										href='/profile'
+										className='flex items-center gap-2'
+									>
+										<div className='w-6 h-6 rounded-full overflow-hidden'>
+											<img
+												src={
+													user?.photoURL ||
+													'/papaavatar.svg'
+												}
+												alt={
+													user?.displayName ||
+													'User avatar'
+												}
+												className='w-full h-full object-cover'
+											/>
+										</div>
+										Profile
+									</Link>
+								</li>
+								<li>
+									<Link href='/brackets/view'>
+										My Brackets
+									</Link>
+								</li>
+								<li>
+									<button
+										onClick={handleSignOut}
+										disabled={isLoggingOut}
+										className='flex items-center gap-2 text-error'
+									>
+										{isLoggingOut ? (
+											<>
+												<span className='loading loading-spinner loading-xs'></span>
+												Signing Out...
+											</>
+										) : (
+											<>
+												<svg
+													xmlns='http://www.w3.org/2000/svg'
+													className='h-5 w-5'
+													fill='none'
+													viewBox='0 0 24 24'
+													stroke='currentColor'
+												>
+													<path
+														strokeLinecap='round'
+														strokeLinejoin='round'
+														strokeWidth={2}
+														d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
+													/>
+												</svg>
+												Sign Out
+											</>
+										)}
+									</button>
+								</li>
+							</>
+						) : (
+							<>
+								<li>
+									<Link
+										href='/login'
+										className='btn btn-ghost justify-start'
+									>
+										Log in
+									</Link>
+								</li>
+								<li>
+									<Link
+										href='/login?signup=true'
+										className='btn btn-primary justify-start mt-2'
+									>
+										Sign up
+									</Link>
+								</li>
+							</>
+						)}
+					</ul>
+				</div>
 			)}
-		</Disclosure>
+		</div>
 	);
 }

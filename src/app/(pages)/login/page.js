@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AuthInput from '@/components/AuthInput';
@@ -9,7 +9,7 @@ import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 export default function Login() {
 	const router = useRouter();
-	const { login, signInWithGoogle } = useAuth();
+	const { login, signInWithGoogle, isAuthenticated, isLoading } = useAuth();
 	const [formData, setFormData] = useState({
 		email: '',
 		password: '',
@@ -31,18 +31,46 @@ export default function Login() {
 		if (Object.keys(newErrors).length === 0) {
 			setLoading(true);
 			try {
+				console.log('Attempting login with:', formData.email);
 				await login(formData.email, formData.password);
-				router.push('/data-dashboard');
+				console.log('Login succeeded, will redirect soon');
+
+				// Let the auth state update before redirecting
+				setTimeout(() => {
+					// Check for redirect URL in query params or session storage
+					const redirectUrl = getRedirectUrl();
+					router.push(redirectUrl || '/data-dashboard');
+				}, 500);
 			} catch (err) {
+				console.error('Login failed:', err);
 				setErrors({
 					submit: 'Failed to login. Please check your credentials.',
 				});
-			} finally {
 				setLoading(false);
 			}
 		} else {
 			setErrors(newErrors);
 		}
+	};
+
+	const getRedirectUrl = () => {
+		if (typeof window !== 'undefined') {
+			// First check URL params
+			const params = new URLSearchParams(window.location.search);
+			const urlRedirect =
+				params.get('redirect') || params.get('callbackUrl');
+
+			// Then check session storage
+			const sessionRedirect = sessionStorage.getItem('authRedirect');
+
+			// Clear session storage redirect
+			if (sessionRedirect) {
+				sessionStorage.removeItem('authRedirect');
+			}
+
+			return urlRedirect || sessionRedirect || '/data-dashboard';
+		}
+		return '/data-dashboard';
 	};
 
 	const handleChange = (e) => {
@@ -62,14 +90,30 @@ export default function Login() {
 
 	const handleGoogleSignIn = async () => {
 		try {
+			setLoading(true);
 			await signInWithGoogle();
-			router.push('/data-dashboard');
+
+			// Let the auth state update before redirecting
+			setTimeout(() => {
+				const redirectUrl = getRedirectUrl();
+				router.push(redirectUrl || '/data-dashboard');
+			}, 500);
 		} catch (err) {
+			console.error('Google sign-in failed:', err);
 			setErrors({
 				submit: 'Failed to sign in with Google. Please try again.',
 			});
+			setLoading(false);
 		}
 	};
+
+	// If already logged in, redirect
+	useEffect(() => {
+		if (!isLoading && isAuthenticated) {
+			const redirectUrl = getRedirectUrl();
+			router.push(redirectUrl || '/data-dashboard');
+		}
+	}, [isAuthenticated, isLoading, router]);
 
 	return (
 		<div className='min-h-screen bg-base-100 py-8 px-4 sm:px-6 lg:px-8'>
