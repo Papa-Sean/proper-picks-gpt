@@ -30,15 +30,37 @@
 		}
 	],
 	"hosting": {
-		"public": ".next",
-		"ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-		"rewrites": [
-			{
-				"source": "**",
-				"destination": "/index.html"
-			}
-		]
-	},
+			"site": "bracket-analysis-papagpt",
+			"public": ".next",
+			"cleanUrls": true,
+			"ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+			"rewrites": [
+				{
+					"source": "**",
+					"destination": "/index.html"
+				}
+			],
+			"headers": [
+				{
+					"source": "**/*.@(js|css)",
+					"headers": [
+						{
+							"key": "Cache-Control",
+							"value": "max-age=31536000"
+						}
+					]
+				},
+				{
+					"source": "**/*.@(jpg|jpeg|gif|png|svg|webp)",
+					"headers": [
+						{
+							"key": "Cache-Control",
+							"value": "max-age=31536000"
+						}
+					]
+				}
+			]
+		},
 	"storage": {
 		"rules": "storage.rules"
 	}
