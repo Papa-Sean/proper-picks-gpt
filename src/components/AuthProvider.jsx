@@ -5,8 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useDispatch } from 'react-redux';
-import { setUser, clearUser } from '@/store/userSlice';
-import { auth } from '@/firebase';
+import { setUser, clearUser } from '@/store/authSlice'; // Changed from userSlice to authSlice
+import { auth } from '@/config/firebase'; // Changed from @/firebase to @/config/firebase
 
 export default function AuthProvider({ children }) {
 	const { isAuthenticated, isLoading } = useAuth();

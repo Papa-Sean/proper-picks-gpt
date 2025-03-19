@@ -59,50 +59,6 @@ export default function Login() {
 				await login(formData.email, formData.password);
 				console.log('Login API call succeeded');
 
-				// Get redirect destination
-				const redirectUrl = getRedirectUrl();
-				console.log('Will redirect to:', redirectUrl);
-
-				// Safe redirect with requestAnimationFrame for better browser timing
-				if (typeof window !== 'undefined') {
-					window.requestAnimationFrame(() => {
-						window.sessionStorage.removeItem('loginInProgress');
-						// Force navigation with window.location
-						window.location.href = redirectUrl;
-					});
-				}
-			} catch (err) {
-				console.error('Login failed:', err);
-				setErrors({
-					submit: 'Failed to login. Please check your credentials.',
-				});
-				if (typeof window !== 'undefined') {
-					window.sessionStorage.removeItem('loginInProgress');
-				}
-				setLoading(false);
-			}
-		} else {
-			setErrors(newErrors);
-		}
-	};
-
-	const handleLoginSubmit = async (e) => {
-		e.preventDefault();
-		const newErrors = validateForm();
-
-		if (Object.keys(newErrors).length === 0) {
-			setLoading(true);
-			try {
-				console.log('Attempting login with:', formData.email);
-
-				// Flag to prevent double redirects (client-side only)
-				if (typeof window !== 'undefined') {
-					window.sessionStorage.setItem('loginInProgress', 'true');
-				}
-
-				await login(formData.email, formData.password);
-				console.log('Login API call succeeded');
-
 				// Clear any redirect markers
 				if (typeof window !== 'undefined') {
 					localStorage.removeItem('redirectStarted');
@@ -114,7 +70,10 @@ export default function Login() {
 
 				// For Netlify, use a simple redirect with slight delay
 				setTimeout(() => {
-					window.location.href = redirectUrl;
+					if (typeof window !== 'undefined') {
+						window.sessionStorage.removeItem('loginInProgress');
+						window.location.href = redirectUrl;
+					}
 				}, 500);
 			} catch (err) {
 				console.error('Login failed:', err);
