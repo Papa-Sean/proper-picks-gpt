@@ -3,7 +3,7 @@
 	"type": "module",
 	"scripts": {
 		"genkit:start": "genkit start -- tsx --watch src/genkit-sample.ts",
-		"lint": "eslint .",
+		"lint": "eslint --no-error-on-unmatched-pattern .",
 		"build": "tsc",
 		"build:watch": "tsc --watch",
 		"serve": "npm run build && firebase emulators:start --only functions",
