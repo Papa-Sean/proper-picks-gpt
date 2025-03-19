@@ -145,28 +145,47 @@ export default function Login() {
 		}
 	};
 
+	// Update the useEffect for authenticated users
+
 	// Handle authenticated users already on the login page
 	useEffect(() => {
-		// Skip the first render completely to avoid hydration issues
+		// Skip during SSR
 		if (typeof window === 'undefined') return;
 
-		// Only run this once to prevent infinite loops
+		// Only run this once using a ref
 		if (redirectAttemptedRef.current) return;
 
-		// Make sure we have auth state and aren't in the middle of logging in
-		const inLoginProcess =
-			typeof window !== 'undefined' &&
-			sessionStorage.getItem('loginInProgress');
+		// Check if we're in the middle of a login process
+		const inLoginProcess = sessionStorage.getItem('loginInProgress');
 
+		// Only redirect if we're authenticated and not in the middle of logging in
 		if (!isLoading && isAuthenticated && !inLoginProcess) {
 			console.log('Already authenticated, redirecting from login page');
 			redirectAttemptedRef.current = true;
 
-			// Use window.requestAnimationFrame for more reliable browser timing
-			window.requestAnimationFrame(() => {
-				const destination = getRedirectUrl();
+			// Get the destination
+			const destination = getRedirectUrl();
+			console.log('Redirecting to:', destination);
+
+			// IMPORTANT: Use history.replaceState to avoid browser history issues on Netlify
+			if (
+				window.history &&
+				typeof window.history.replaceState === 'function'
+			) {
+				// Mark that we've started the redirect to prevent loops
+				localStorage.setItem('redirectStarted', Date.now().toString());
+
+				// Replace current URL with destination but don't navigate yet
+				window.history.replaceState(null, '', destination);
+
+				// Then use location.href for the actual navigation
+				setTimeout(() => {
+					window.location.href = destination;
+				}, 100);
+			} else {
+				// Fallback for older browsers
 				window.location.href = destination;
-			});
+			}
 		}
 	}, [isAuthenticated, isLoading, getRedirectUrl]);
 

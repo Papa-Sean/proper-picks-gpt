@@ -26,7 +26,27 @@ export default function Dashboard() {
 		// Check authentication and redirect if needed
 		if (!isAuthenticated) {
 			console.log('User not authenticated, redirecting to login');
-			router.push('/login');
+
+			// Skip redirect if we've recently attempted one (prevents loops)
+			if (typeof window !== 'undefined') {
+				const lastRedirect = localStorage.getItem('redirectStarted');
+				if (lastRedirect) {
+					const timeSinceRedirect =
+						Date.now() - parseInt(lastRedirect, 10);
+					if (timeSinceRedirect < 2000) {
+						console.log(
+							'Recent redirect detected, preventing redirect loop'
+						);
+						return;
+					}
+				}
+
+				// Mark that we're starting a redirect
+				localStorage.setItem('redirectStarted', Date.now().toString());
+				window.location.href = '/login';
+			} else {
+				router.push('/login');
+			}
 		}
 	}, [isAuthenticated, router]);
 
