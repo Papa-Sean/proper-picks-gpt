@@ -9,66 +9,72 @@ import Link from 'next/link';
 export default function Dashboard() {
 	const router = useRouter();
 	const { isAuthenticated, user } = useSelector((state) => state.auth);
-	const [isBeforeDeadline, setIsBeforeDeadline] = useState(true); // Default value
+	// Use a ref for mounting status to avoid re-renders
+	const [mounted, setMounted] = useState(false);
+	// Initialize these with default values that will be the same on server and client
+	const [isBeforeDeadline, setIsBeforeDeadline] = useState(true);
 	const [deadlineInfo, setDeadlineInfo] = useState({
-		text: 'Loading...',
+		text: 'Loading deadline information...',
 		urgent: false,
 	});
-	const [clientReady, setClientReady] = useState(false);
 
+	// First useEffect - handle authentication check and redirect
 	useEffect(() => {
+		// Set mounted to true once component is mounted on client
+		setMounted(true);
+
+		// Check authentication and redirect if needed
 		if (!isAuthenticated) {
+			console.log('User not authenticated, redirecting to login');
 			router.push('/login');
 		}
 	}, [isAuthenticated, router]);
 
-	// Move date calculations into useEffect to run only on the client
+	// Second useEffect - handle date calculations only when mounted
 	useEffect(() => {
-		// Calculate if it's before Thursday noon (tournament typically starts on Thursday)
-		const now = new Date();
-		const tournamentDeadline = new Date('2025-03-20T12:00:00'); // March 21st, 2024 at noon
-		const isBefore = now < tournamentDeadline;
-		setIsBeforeDeadline(isBefore);
+		// Only run this on the client after mount
+		if (mounted) {
+			// Calculate if it's before Thursday noon
+			const now = new Date();
+			const tournamentDeadline = new Date('2025-03-20T12:00:00');
+			const isBefore = now < tournamentDeadline;
+			setIsBeforeDeadline(isBefore);
 
-		// Calculate days/hours remaining
-		if (!isBefore) {
-			setDeadlineInfo({ text: 'The deadline has passed!' });
-		} else {
-			const diffTime = Math.abs(tournamentDeadline - now);
-			const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-			const diffHours = Math.floor(
-				(diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-			);
-
-			if (diffDays > 0) {
+			// Calculate days/hours remaining
+			if (!isBefore) {
 				setDeadlineInfo({
-					text: `${diffDays} days and ${diffHours} hours remaining`,
-					urgent: diffDays < 2,
-				});
-			} else if (diffHours > 0) {
-				setDeadlineInfo({
-					text: `Only ${diffHours} hours remaining!`,
-					urgent: true,
+					text: 'The deadline has passed!',
+					urgent: false,
 				});
 			} else {
-				setDeadlineInfo({
-					text: 'Less than an hour remaining!',
-					urgent: true,
-				});
+				const diffTime = Math.abs(tournamentDeadline - now);
+				const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+				const diffHours = Math.floor(
+					(diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+				);
+
+				if (diffDays > 0) {
+					setDeadlineInfo({
+						text: `${diffDays} days and ${diffHours} hours remaining`,
+						urgent: diffDays < 2,
+					});
+				} else if (diffHours > 0) {
+					setDeadlineInfo({
+						text: `Only ${diffHours} hours remaining!`,
+						urgent: true,
+					});
+				} else {
+					setDeadlineInfo({
+						text: 'Less than an hour remaining!',
+						urgent: true,
+					});
+				}
 			}
 		}
+	}, [mounted]);
 
-		// Mark client as ready for rendering
-		setClientReady(true);
-	}, []);
-
-	// Don't render anything until client calculations are done
-	if (!isAuthenticated) {
-		return null;
-	}
-
-	// Show a minimal loading state during hydration
-	if (!clientReady) {
+	// Critical fix: Return a consistent loading UI during server rendering and initial client render
+	if (!mounted || !isAuthenticated) {
 		return (
 			<div className='min-h-screen bg-base-100 flex items-center justify-center'>
 				<div className='loading loading-spinner loading-lg'></div>
@@ -76,6 +82,7 @@ export default function Dashboard() {
 		);
 	}
 
+	// Main UI - only rendered after client-side checks are complete
 	return (
 		<div className='min-h-screen bg-base-100'>
 			<div className='text-center py-10 px-4'>
