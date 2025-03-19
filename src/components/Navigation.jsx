@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation'; // Add useRouter
+import { usePathname, useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
@@ -9,11 +9,18 @@ import NavLink from './NavLink';
 
 export default function Navigation() {
 	const pathname = usePathname();
-	const router = useRouter(); // Add router
+	const router = useRouter();
 	const { user, logout } = useAuth();
 	const { isAuthenticated } = useSelector((state) => state.auth);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
-	const [isLoggingOut, setIsLoggingOut] = useState(false); // Add loading state
+	const [isLoggingOut, setIsLoggingOut] = useState(false);
+	// Important: Use this to defer client-side rendering until after hydration
+	const [isClient, setIsClient] = useState(false);
+
+	// Set isClient to true once component mounts on client side
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
 
 	// Close mobile menu when route changes
 	useEffect(() => {
@@ -22,33 +29,32 @@ export default function Navigation() {
 
 	const isActive = (path) => pathname === path;
 
-	// Update handleSignOut in Navigation.jsx
-const handleSignOut = async () => {
-	try {
-	  setIsLoggingOut(true);
-	  console.log('Navigation: Starting logout process');
-	  
-	  // Clear localStorage manually as a backup
-	  if (typeof window !== 'undefined') {
-		localStorage.removeItem('auth');
-	  }
-	  
-	  // Call the logout function from your auth hook
-	  await logout();
-	  
-	  console.log('Navigation: Logout successful, redirecting');
-	  
-	  // Add a slight delay to ensure state updates
-	  setTimeout(() => {
-		router.push('/login');
-	  }, 500);
-	} catch (error) {
-	  console.error('Error signing out:', error);
-	  alert('Failed to sign out. Please try again.');
-	} finally {
-	  setIsLoggingOut(false);
-	}
-  };
+	const handleSignOut = async () => {
+		try {
+			setIsLoggingOut(true);
+			console.log('Navigation: Starting logout process');
+
+			// Clear localStorage manually as a backup
+			if (typeof window !== 'undefined') {
+				localStorage.removeItem('auth');
+			}
+
+			// Call the logout function from your auth hook
+			await logout();
+
+			console.log('Navigation: Logout successful, redirecting');
+
+			// Add a slight delay to ensure state updates
+			setTimeout(() => {
+				router.push('/login');
+			}, 500);
+		} catch (error) {
+			console.error('Error signing out:', error);
+			alert('Failed to sign out. Please try again.');
+		} finally {
+			setIsLoggingOut(false);
+		}
+	};
 
 	// Navigation items
 	const navItems = [
@@ -66,6 +72,37 @@ const handleSignOut = async () => {
 		},
 		{ path: '/brackets/view', label: 'My Brackets', requiresAuth: true },
 	];
+
+	// Only render navigation items on the client, after hydration is complete
+	const renderNavItems = () => {
+		if (!isClient) {
+			// During SSR and before hydration on client, return a simplified structure
+			return navItems.map((item) => (
+				<li
+					key={item.path}
+					style={{ display: 'none' }}
+				></li>
+			));
+		}
+
+		// Once we're on the client and hydrated, render the full navigation
+		return navItems.map(
+			(item) =>
+				(!item.requiresAuth || isAuthenticated) && (
+					<li key={item.path}>
+						<NavLink
+							href={item.path}
+							requiresAuth={item.requiresAuth}
+							className={
+								isActive(item.path) ? 'active font-bold' : ''
+							}
+						>
+							{item.label}
+						</NavLink>
+					</li>
+				)
+		);
+	};
 
 	return (
 		<div className='sticky top-0 z-50'>
@@ -85,24 +122,7 @@ const handleSignOut = async () => {
 					{/* Middle section with navigation items - desktop only */}
 					<div className='hidden md:flex flex-1 justify-center'>
 						<ul className='menu menu-horizontal px-1'>
-							{navItems.map(
-								(item) =>
-									(!item.requiresAuth || isAuthenticated) && (
-										<li key={item.path}>
-											<NavLink
-												href={item.path}
-												requiresAuth={item.requiresAuth}
-												className={
-													isActive(item.path)
-														? 'active font-bold'
-														: ''
-												}
-											>
-												{item.label}
-											</NavLink>
-										</li>
-									)
-							)}
+							{renderNavItems()}
 						</ul>
 					</div>
 
@@ -110,7 +130,7 @@ const handleSignOut = async () => {
 					<div className='flex-none flex items-center gap-2'>
 						{/* Auth buttons - desktop */}
 						<div className='hidden md:flex gap-2'>
-							{isAuthenticated ? (
+							{isClient && isAuthenticated ? (
 								<div className='dropdown dropdown-end'>
 									<label
 										tabIndex={0}
@@ -156,24 +176,28 @@ const handleSignOut = async () => {
 								</div>
 							) : (
 								<>
-									<Link
-										href='/login'
-										className='btn btn-ghost'
-									>
-										Log in
-									</Link>
-									<Link
-										href='/login?signup=true'
-										className='btn btn-primary'
-									>
-										Sign up
-									</Link>
+									{isClient && (
+										<>
+											<Link
+												href='/login'
+												className='btn btn-ghost'
+											>
+												Log in
+											</Link>
+											<Link
+												href='/login?signup=true'
+												className='btn btn-primary'
+											>
+												Sign up
+											</Link>
+										</>
+									)}
 								</>
 							)}
 						</div>
 
 						{/* Sign-out button (visible only when logged in) */}
-						{isAuthenticated && (
+						{isClient && isAuthenticated && (
 							<div className='hidden md:block'>
 								<button
 									onClick={handleSignOut}
@@ -230,28 +254,11 @@ const handleSignOut = async () => {
 			{isMenuOpen && (
 				<div className='md:hidden bg-base-100 shadow-lg border-t border-base-300 z-40'>
 					<ul className='menu p-4'>
-						{navItems.map(
-							(item) =>
-								(!item.requiresAuth || isAuthenticated) && (
-									<li key={item.path}>
-										<NavLink
-											href={item.path}
-											requiresAuth={item.requiresAuth}
-											className={
-												isActive(item.path)
-													? 'active font-bold'
-													: ''
-											}
-										>
-											{item.label}
-										</NavLink>
-									</li>
-								)
-						)}
+						{isClient && renderNavItems()}
 
 						{/* Auth Links for Mobile */}
 						<div className='divider my-2'></div>
-						{isAuthenticated ? (
+						{isClient && isAuthenticated ? (
 							<>
 								<li>
 									<Link
@@ -314,22 +321,26 @@ const handleSignOut = async () => {
 							</>
 						) : (
 							<>
-								<li>
-									<Link
-										href='/login'
-										className='btn btn-ghost justify-start'
-									>
-										Log in
-									</Link>
-								</li>
-								<li>
-									<Link
-										href='/login?signup=true'
-										className='btn btn-primary justify-start mt-2'
-									>
-										Sign up
-									</Link>
-								</li>
+								{isClient && (
+									<>
+										<li>
+											<Link
+												href='/login'
+												className='btn btn-ghost justify-start'
+											>
+												Log in
+											</Link>
+										</li>
+										<li>
+											<Link
+												href='/login?signup=true'
+												className='btn btn-primary justify-start mt-2'
+											>
+												Sign up
+											</Link>
+										</li>
+									</>
+								)}
 							</>
 						)}
 					</ul>

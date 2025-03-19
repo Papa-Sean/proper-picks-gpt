@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import Image from 'next/image';
@@ -9,6 +9,12 @@ import Link from 'next/link';
 export default function Dashboard() {
 	const router = useRouter();
 	const { isAuthenticated, user } = useSelector((state) => state.auth);
+	const [isBeforeDeadline, setIsBeforeDeadline] = useState(true); // Default value
+	const [deadlineInfo, setDeadlineInfo] = useState({
+		text: 'Loading...',
+		urgent: false,
+	});
+	const [clientReady, setClientReady] = useState(false);
 
 	useEffect(() => {
 		if (!isAuthenticated) {
@@ -16,38 +22,59 @@ export default function Dashboard() {
 		}
 	}, [isAuthenticated, router]);
 
+	// Move date calculations into useEffect to run only on the client
+	useEffect(() => {
+		// Calculate if it's before Thursday noon (tournament typically starts on Thursday)
+		const now = new Date();
+		const tournamentDeadline = new Date('2025-03-20T12:00:00'); // March 21st, 2024 at noon
+		const isBefore = now < tournamentDeadline;
+		setIsBeforeDeadline(isBefore);
+
+		// Calculate days/hours remaining
+		if (!isBefore) {
+			setDeadlineInfo({ text: 'The deadline has passed!' });
+		} else {
+			const diffTime = Math.abs(tournamentDeadline - now);
+			const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+			const diffHours = Math.floor(
+				(diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+			);
+
+			if (diffDays > 0) {
+				setDeadlineInfo({
+					text: `${diffDays} days and ${diffHours} hours remaining`,
+					urgent: diffDays < 2,
+				});
+			} else if (diffHours > 0) {
+				setDeadlineInfo({
+					text: `Only ${diffHours} hours remaining!`,
+					urgent: true,
+				});
+			} else {
+				setDeadlineInfo({
+					text: 'Less than an hour remaining!',
+					urgent: true,
+				});
+			}
+		}
+
+		// Mark client as ready for rendering
+		setClientReady(true);
+	}, []);
+
+	// Don't render anything until client calculations are done
 	if (!isAuthenticated) {
 		return null;
 	}
 
-	// Calculate if it's before Thursday noon (tournament typically starts on Thursday)
-	const now = new Date();
-	const tournamentDeadline = new Date('2025-03-20T12:00:00'); // March 21st, 2024 at noon
-	const isBeforeDeadline = now < tournamentDeadline;
-
-	// Calculate days/hours remaining
-	const timeRemaining = () => {
-		if (!isBeforeDeadline) return { text: 'The deadline has passed!' };
-
-		const diffTime = Math.abs(tournamentDeadline - now);
-		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-		const diffHours = Math.floor(
-			(diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+	// Show a minimal loading state during hydration
+	if (!clientReady) {
+		return (
+			<div className='min-h-screen bg-base-100 flex items-center justify-center'>
+				<div className='loading loading-spinner loading-lg'></div>
+			</div>
 		);
-
-		if (diffDays > 0) {
-			return {
-				text: `${diffDays} days and ${diffHours} hours remaining`,
-				urgent: diffDays < 2,
-			};
-		} else if (diffHours > 0) {
-			return { text: `Only ${diffHours} hours remaining!`, urgent: true };
-		} else {
-			return { text: 'Less than an hour remaining!', urgent: true };
-		}
-	};
-
-	const deadline = timeRemaining();
+	}
 
 	return (
 		<div className='min-h-screen bg-base-100'>
@@ -86,7 +113,7 @@ export default function Dashboard() {
 								<div className='py-2'>
 									<div
 										className={`badge badge-lg ${
-											deadline.urgent
+											deadlineInfo.urgent
 												? 'badge-error'
 												: 'badge-warning'
 										} gap-2`}
@@ -104,7 +131,7 @@ export default function Dashboard() {
 												d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
 											></path>
 										</svg>
-										{deadline.text}
+										{deadlineInfo.text}
 									</div>
 								</div>
 								<Link
@@ -134,10 +161,20 @@ export default function Dashboard() {
 				</div>
 			</div>
 
+			{/* Rest of your component remains the same */}
+
 			{/* Hero section for AI models */}
 			<div className='hero bg-primary text-primary-content py-12'>
 				<div className='hero-content flex-col lg:flex-row-reverse'>
-					
+					<div className='relative w-full max-w-sm h-64 lg:h-80'>
+						<Image
+							src='/construction.png'
+							alt='AI Models'
+							fill
+							className='object-contain'
+							priority
+						/>
+					</div>
 					<div className='lg:mr-8 max-w-md'>
 						<h2 className='text-3xl font-bold'>
 							AI Bracket Predictions

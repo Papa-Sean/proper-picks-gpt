@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AuthInput from '@/components/AuthInput';
@@ -16,10 +16,14 @@ export default function Login() {
 	});
 	const [errors, setErrors] = useState({});
 	const [loading, setLoading] = useState(false);
-	const [redirectAttempted, setRedirectAttempted] = useState(false);
+
+	// Use ref instead of state to track redirect attempts
+	// This avoids hydration issues with state
+	const redirectAttemptedRef = useRef(false);
 
 	// Extract getRedirectUrl as a proper function with useCallback
 	const getRedirectUrl = useCallback(() => {
+		// Don't try to access browser APIs during SSR
 		if (typeof window === 'undefined') return '/data-dashboard';
 
 		// First check URL params
@@ -37,6 +41,7 @@ export default function Login() {
 		return urlRedirect || sessionRedirect || '/data-dashboard';
 	}, []);
 
+	// Update your handleSubmit function
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		const newErrors = validateForm();
@@ -46,8 +51,10 @@ export default function Login() {
 			try {
 				console.log('Attempting login with:', formData.email);
 
-				// Flag to prevent double redirects
-				sessionStorage.setItem('loginInProgress', 'true');
+				// Flag to prevent double redirects (client-side only)
+				if (typeof window !== 'undefined') {
+					window.sessionStorage.setItem('loginInProgress', 'true');
+				}
 
 				await login(formData.email, formData.password);
 				console.log('Login API call succeeded');
@@ -56,19 +63,22 @@ export default function Login() {
 				const redirectUrl = getRedirectUrl();
 				console.log('Will redirect to:', redirectUrl);
 
-				// Safe redirect with a timeout to allow state to update
-				setTimeout(() => {
-					sessionStorage.removeItem('loginInProgress');
-
-					// Force navigation with window.location
-					window.location.href = redirectUrl;
-				}, 500);
+				// Safe redirect with requestAnimationFrame for better browser timing
+				if (typeof window !== 'undefined') {
+					window.requestAnimationFrame(() => {
+						window.sessionStorage.removeItem('loginInProgress');
+						// Force navigation with window.location
+						window.location.href = redirectUrl;
+					});
+				}
 			} catch (err) {
 				console.error('Login failed:', err);
 				setErrors({
 					submit: 'Failed to login. Please check your credentials.',
 				});
-				sessionStorage.removeItem('loginInProgress');
+				if (typeof window !== 'undefined') {
+					window.sessionStorage.removeItem('loginInProgress');
+				}
 				setLoading(false);
 			}
 		} else {
@@ -98,13 +108,16 @@ export default function Login() {
 		}
 	};
 
+	// Update your Google sign-in handler
 	const handleGoogleSignIn = async () => {
 		try {
 			setLoading(true);
 			console.log('Attempting Google sign-in');
 
-			// Set login in progress flag
-			sessionStorage.setItem('loginInProgress', 'true');
+			// Set login in progress flag (client-side only)
+			if (typeof window !== 'undefined') {
+				window.sessionStorage.setItem('loginInProgress', 'true');
+			}
 
 			await signInWithGoogle();
 			console.log('Google sign-in succeeded');
@@ -113,25 +126,32 @@ export default function Login() {
 			const redirectUrl = getRedirectUrl();
 			console.log('Will redirect to:', redirectUrl);
 
-			// Use a direct page navigation rather than Next.js router
-			setTimeout(() => {
-				sessionStorage.removeItem('loginInProgress');
-				window.location.href = redirectUrl;
-			}, 500);
+			// Use requestAnimationFrame for more reliable browser timing
+			if (typeof window !== 'undefined') {
+				window.requestAnimationFrame(() => {
+					window.sessionStorage.removeItem('loginInProgress');
+					window.location.href = redirectUrl;
+				});
+			}
 		} catch (err) {
 			console.error('Google sign-in failed:', err);
 			setErrors({
 				submit: 'Failed to sign in with Google. Please try again.',
 			});
-			sessionStorage.removeItem('loginInProgress');
+			if (typeof window !== 'undefined') {
+				window.sessionStorage.removeItem('loginInProgress');
+			}
 			setLoading(false);
 		}
 	};
 
 	// Handle authenticated users already on the login page
 	useEffect(() => {
+		// Skip the first render completely to avoid hydration issues
+		if (typeof window === 'undefined') return;
+
 		// Only run this once to prevent infinite loops
-		if (redirectAttempted) return;
+		if (redirectAttemptedRef.current) return;
 
 		// Make sure we have auth state and aren't in the middle of logging in
 		const inLoginProcess =
@@ -140,15 +160,15 @@ export default function Login() {
 
 		if (!isLoading && isAuthenticated && !inLoginProcess) {
 			console.log('Already authenticated, redirecting from login page');
-			setRedirectAttempted(true);
+			redirectAttemptedRef.current = true;
 
-			// Simple timeout to ensure this runs after all other effects
-			setTimeout(() => {
+			// Use window.requestAnimationFrame for more reliable browser timing
+			window.requestAnimationFrame(() => {
 				const destination = getRedirectUrl();
 				window.location.href = destination;
-			}, 100);
+			});
 		}
-	}, [isAuthenticated, isLoading, getRedirectUrl, redirectAttempted]);
+	}, [isAuthenticated, isLoading, getRedirectUrl]);
 
 	// Rest of your component (no changes needed)
 	return (
