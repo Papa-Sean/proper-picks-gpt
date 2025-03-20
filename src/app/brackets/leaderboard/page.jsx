@@ -40,7 +40,7 @@ export default function LeaderboardPage() {
 				setLoading(true);
 
 				// First, try to get tournament info
-				const tournamentId = 'ncaa-2024'; // You might want to make this dynamic
+				const tournamentId = 'ncaa-2025'; // You might want to make this dynamic
 				const tournamentRef = doc(db, 'tournaments', tournamentId);
 				const tournamentDoc = await getDoc(tournamentRef);
 
