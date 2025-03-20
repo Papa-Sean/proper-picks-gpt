@@ -9,25 +9,21 @@ import Link from 'next/link';
 export default function Dashboard() {
 	const router = useRouter();
 	const { isAuthenticated, user } = useSelector((state) => state.auth);
-	// Use a ref for mounting status to avoid re-renders
 	const [mounted, setMounted] = useState(false);
-	// Initialize these with default values that will be the same on server and client
 	const [isBeforeDeadline, setIsBeforeDeadline] = useState(true);
 	const [deadlineInfo, setDeadlineInfo] = useState({
 		text: 'Loading deadline information...',
 		urgent: false,
 	});
 
-	// First useEffect - handle authentication check and redirect
+	// Authentication check and redirect
 	useEffect(() => {
-		// Set mounted to true once component is mounted on client
 		setMounted(true);
 
-		// Check authentication and redirect if needed
 		if (!isAuthenticated) {
 			console.log('User not authenticated, redirecting to login');
 
-			// Skip redirect if we've recently attempted one (prevents loops)
+			// Prevent redirect loops
 			if (typeof window !== 'undefined') {
 				const lastRedirect = localStorage.getItem('redirectStarted');
 				if (lastRedirect) {
@@ -41,7 +37,6 @@ export default function Dashboard() {
 					}
 				}
 
-				// Mark that we're starting a redirect
 				localStorage.setItem('redirectStarted', Date.now().toString());
 				window.location.href = '/login';
 			} else {
@@ -50,17 +45,14 @@ export default function Dashboard() {
 		}
 	}, [isAuthenticated, router]);
 
-	// Second useEffect - handle date calculations only when mounted
+	// Date calculations
 	useEffect(() => {
-		// Only run this on the client after mount
 		if (mounted) {
-			// Calculate if it's before Thursday noon
 			const now = new Date();
 			const tournamentDeadline = new Date('2025-03-20T12:00:00');
 			const isBefore = now < tournamentDeadline;
 			setIsBeforeDeadline(isBefore);
 
-			// Calculate days/hours remaining
 			if (!isBefore) {
 				setDeadlineInfo({
 					text: 'The deadline has passed!',
@@ -75,17 +67,17 @@ export default function Dashboard() {
 
 				if (diffDays > 0) {
 					setDeadlineInfo({
-						text: `${diffDays} days and ${diffHours} hours remaining`,
+						text: `${diffDays}d ${diffHours}h left`, // Shorter for mobile
 						urgent: diffDays < 2,
 					});
 				} else if (diffHours > 0) {
 					setDeadlineInfo({
-						text: `Only ${diffHours} hours remaining!`,
+						text: `Only ${diffHours}h left!`,
 						urgent: true,
 					});
 				} else {
 					setDeadlineInfo({
-						text: 'Less than an hour remaining!',
+						text: 'Under 1h left!',
 						urgent: true,
 					});
 				}
@@ -93,7 +85,7 @@ export default function Dashboard() {
 		}
 	}, [mounted]);
 
-	// Critical fix: Return a consistent loading UI during server rendering and initial client render
+	// Loading state
 	if (!mounted || !isAuthenticated) {
 		return (
 			<div className='min-h-screen bg-base-100 flex items-center justify-center'>
@@ -102,140 +94,197 @@ export default function Dashboard() {
 		);
 	}
 
-	// Main UI - only rendered after client-side checks are complete
 	return (
 		<div className='min-h-screen bg-base-100'>
-			<div className='text-center py-10 px-4'>
-				<h1 className='text-4xl sm:text-5xl md:text-6xl font-bold mb-4'>
+			{/* Page Header - More compact on mobile */}
+			<div className='text-center py-6 md:py-10 px-4'>
+				<h1 className='text-3xl sm:text-4xl md:text-5xl font-bold mb-2 md:mb-4'>
 					Dashboard
 				</h1>
-				<p className='text-xl text-base-content/70 max-w-3xl mx-auto'>
-					Welcome back, {user?.displayName || user?.email}! Check out
-					the latest tournament information.
+				<p className='text-base md:text-xl text-base-content/70 max-w-3xl mx-auto'>
+					Welcome,{' '}
+					<span className='font-semibold'>
+						{user?.displayName ||
+							user?.email?.split('@')[0] ||
+							'there'}
+					</span>
+					!
 				</p>
 			</div>
 
-			{/* Hero section for bracket creation */}
-			<div className='hero bg-base-200 py-12 mb-8'>
-				<div className='hero-content flex-col lg:flex-row'>
-					<Image
-						src='/papaavatar.svg'
-						alt='Tournament Brackets'
-						width={300}
-						height={300}
-						className='max-w-sm rounded-lg shadow-2xl'
-					/>
-					<div className='lg:ml-8'>
-						<h2 className='text-3xl font-bold'>
-							Create Your March Madness Bracket!
-						</h2>
-						{isBeforeDeadline ? (
-							<>
-								<p className='py-4'>
-									The tournament is about to begin! Create
-									your bracket before Thursday at noon to join
-									the fun and see how your picks compare to
-									our AI models.
-								</p>
-								<div className='py-2'>
-									<div
-										className={`badge badge-lg ${
-											deadlineInfo.urgent
-												? 'badge-error'
-												: 'badge-warning'
-										} gap-2`}
-									>
-										<svg
-											xmlns='http://www.w3.org/2000/svg'
-											fill='none'
-											viewBox='0 0 24 24'
-											className='inline-block w-4 h-4 stroke-current'
+			{/* Bracket Creation Card - Fixed responsive layout issues */}
+			<div className='bg-base-200 py-8 md:py-12 mb-6 md:mb-8 px-4 md:px-6'>
+				<div className='container mx-auto'>
+					<div className='flex flex-col lg:flex-row items-center gap-6 md:gap-8'>
+						{/* Image with proper responsive sizing */}
+
+						{/* Content with better spacing for mobile */}
+						<div className='w-full lg:w-1/2'>
+							<h2 className='text-2xl md:text-3xl font-bold text-center lg:text-left'>
+								Create Your March Madness Bracket!
+							</h2>
+							{isBeforeDeadline ? (
+								<>
+									<p className='py-3 md:py-4 text-sm md:text-base text-center lg:text-left'>
+										The tournament is about to begin! Create
+										your bracket before Thursday at noon to
+										join the competition.
+									</p>
+									<div className='py-2 flex justify-center lg:justify-start'>
+										<div
+											className={`badge badge-lg ${
+												deadlineInfo.urgent
+													? 'badge-error'
+													: 'badge-warning'
+											} gap-1 text-xs md:text-sm px-3 py-3`}
 										>
-											<path
-												strokeLinecap='round'
-												strokeLinejoin='round'
-												strokeWidth='2'
-												d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
-											></path>
-										</svg>
-										{deadlineInfo.text}
+											<svg
+												xmlns='http://www.w3.org/2000/svg'
+												fill='none'
+												viewBox='0 0 24 24'
+												className='inline-block w-4 h-4 stroke-current'
+											>
+												<path
+													strokeLinecap='round'
+													strokeLinejoin='round'
+													strokeWidth='2'
+													d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+												></path>
+											</svg>
+											{deadlineInfo.text}
+										</div>
 									</div>
-								</div>
-								<Link
-									href='/brackets/create'
-									className='btn btn-primary mt-4'
-								>
-									Create My Bracket
-								</Link>
-							</>
-						) : (
-							<>
-								<p className='py-4'>
-									The tournament has already begun! While you
-									can no longer submit a new bracket, you can
-									still view the leaderboard and track how our
-									AI models are performing.
-								</p>
-								<Link
-									href='/brackets/leaderboard'
-									className='btn btn-primary mt-4'
-								>
-									View Leaderboard
-								</Link>
-							</>
-						)}
+									<div className='mt-4 flex justify-center lg:justify-start'>
+										<Link
+											href='/brackets/create'
+											className='btn btn-primary'
+										>
+											Create My Bracket
+										</Link>
+									</div>
+								</>
+							) : (
+								<>
+									<p className='py-3 md:py-4 text-sm md:text-base text-center lg:text-left'>
+										The tournament has already begun! While
+										you can't submit a new bracket, you can
+										view the leaderboard.
+									</p>
+									<div className='mt-4 flex justify-center lg:justify-start'>
+										<Link
+											href='/brackets/leaderboard'
+											className='btn btn-primary'
+										>
+											View Leaderboard
+										</Link>
+									</div>
+								</>
+							)}
+						</div>
 					</div>
 				</div>
 			</div>
 
-			{/* Rest of your component remains the same */}
+			{/* AI Models Section - Improved mobile layout */}
+			<div className='bg-primary text-primary-content py-8 md:py-12 px-4 md:px-6'>
+				<div className='container mx-auto'>
+					<div className='flex flex-col lg:flex-row-reverse gap-6 items-center'>
+						<div className='w-full lg:w-2/3'>
+							<h2 className='text-2xl md:text-3xl font-bold text-center lg:text-left mb-3 md:mb-4'>
+								AI Bracket Predictions
+							</h2>
+							<p className='py-2 md:py-3 text-sm md:text-base text-center lg:text-left'>
+								Our AI models analyze tournament data, team
+								stats, and real-time information to predict
+								outcomes.
+							</p>
 
-			{/* Hero section for AI models */}
-			<div className='hero bg-primary text-primary-content py-12'>
-				<div className='hero-content flex-col lg:flex-row-reverse'>
-					<div className='relative w-full max-w-sm h-64 lg:h-80'>
-						<Image
-							src='/construction.png'
-							alt='AI Models'
-							fill
-							className='object-contain'
-							priority
-						/>
-					</div>
-					<div className='lg:mr-8 max-w-md'>
-						<h2 className='text-3xl font-bold'>
-							AI Bracket Predictions
-						</h2>
-						<p className='py-4'>
-							Our advanced AI models are analyzing historical
-							tournament data, team statistics, and real-time
-							information to predict game outcomes. As the
-							tournament progresses, we'll display:
-						</p>
-						<ul className='list-disc list-inside space-y-2 pl-2'>
-							<li>AI predictions for upcoming games</li>
-							<li>Real-time bracket performance analytics</li>
-							<li>Comparison between human and AI brackets</li>
-							<li>
-								Visualizations of game-winning probabilities
-							</li>
-						</ul>
-						<div className='mt-6'>
-							<div className='stats shadow'>
-								<div className='stat'>
-									<div className='stat-title'>
-										Data Points Analyzed
-									</div>
-									<div className='stat-value'>10M+</div>
-									<div className='stat-desc'>
-										For each tournament prediction
-									</div>
+							{/* List items in a grid for better mobile layout */}
+							<div className='grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 mt-2 md:mt-4'>
+								<div className='flex items-start gap-2 text-sm md:text-base'>
+									<svg
+										className='w-5 h-5 mt-1 flex-shrink-0'
+										fill='currentColor'
+										viewBox='0 0 20 20'
+									>
+										<path
+											fillRule='evenodd'
+											d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
+											clipRule='evenodd'
+										/>
+									</svg>
+									<span>
+										AI predictions for upcoming games
+									</span>
 								</div>
-								<div className='stat'>
-									<div className='stat-title'>AI Models</div>
-									<div className='stat-value'>4</div>
-									<div className='stat-desc'>
-										Competing against each other
+								<div className='flex items-start gap-2 text-sm md:text-base'>
+									<svg
+										className='w-5 h-5 mt-1 flex-shrink-0'
+										fill='currentColor'
+										viewBox='0 0 20 20'
+									>
+										<path
+											fillRule='evenodd'
+											d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
+											clipRule='evenodd'
+										/>
+									</svg>
+									<span>Real-time bracket analytics</span>
+								</div>
+								<div className='flex items-start gap-2 text-sm md:text-base'>
+									<svg
+										className='w-5 h-5 mt-1 flex-shrink-0'
+										fill='currentColor'
+										viewBox='0 0 20 20'
+									>
+										<path
+											fillRule='evenodd'
+											d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
+											clipRule='evenodd'
+										/>
+									</svg>
+									<span>Human vs AI bracket comparisons</span>
+								</div>
+								<div className='flex items-start gap-2 text-sm md:text-base'>
+									<svg
+										className='w-5 h-5 mt-1 flex-shrink-0'
+										fill='currentColor'
+										viewBox='0 0 20 20'
+									>
+										<path
+											fillRule='evenodd'
+											d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
+											clipRule='evenodd'
+										/>
+									</svg>
+									<span>Game probability visualizations</span>
+								</div>
+							</div>
+
+							{/* Stats section with responsive design */}
+							<div className='mt-6 flex justify-center lg:justify-start'>
+								<div className='stats shadow flex-col sm:flex-row text-primary-content bg-primary-focus bg-opacity-50'>
+									<div className='stat py-2 md:py-4 px-4 md:px-6'>
+										<div className='stat-title text-primary-content text-opacity-80 text-xs md:text-sm'>
+											Data Points
+										</div>
+										<div className='stat-value text-lg md:text-2xl'>
+											10M+
+										</div>
+										<div className='stat-desc text-primary-content text-opacity-70 text-xs'>
+											Per tournament
+										</div>
+									</div>
+									<div className='stat py-2 md:py-4 px-4 md:px-6'>
+										<div className='stat-title text-primary-content text-opacity-80 text-xs md:text-sm'>
+											AI Models
+										</div>
+										<div className='stat-value text-lg md:text-2xl'>
+											4
+										</div>
+										<div className='stat-desc text-primary-content text-opacity-70 text-xs'>
+											Competing models
+										</div>
 									</div>
 								</div>
 							</div>
@@ -244,24 +293,41 @@ export default function Dashboard() {
 				</div>
 			</div>
 
-			{/* Additional resources section */}
-			<div className='py-12 px-4'>
-				<div className='max-w-7xl mx-auto'>
-					<h2 className='text-2xl font-bold text-center mb-8'>
+			{/* Resources Section - Responsive grid */}
+			<div className='py-8 md:py-12 px-4 md:px-6'>
+				<div className='container mx-auto'>
+					<h2 className='text-xl md:text-2xl font-bold text-center mb-6 md:mb-8'>
 						Tournament Resources
 					</h2>
-					<div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-						<div className='card bg-base-100 shadow-xl'>
-							<div className='card-body'>
-								<h3 className='card-title'>My Brackets</h3>
-								<p>
+
+					{/* 3-column grid that collapses to 1 column on mobile */}
+					<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'>
+						{/* Card 1 */}
+						<div className='card bg-base-100 shadow-md hover:shadow-lg transition-shadow duration-300'>
+							<div className='card-body p-4 md:p-6'>
+								<h3 className='card-title text-lg md:text-xl flex items-center gap-2'>
+									<svg
+										className='w-5 h-5 text-primary'
+										fill='currentColor'
+										viewBox='0 0 20 20'
+									>
+										<path d='M9 2a1 1 0 000 2h2a1 1 0 100-2H9z' />
+										<path
+											fillRule='evenodd'
+											d='M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z'
+											clipRule='evenodd'
+										/>
+									</svg>
+									My Brackets
+								</h3>
+								<p className='text-sm md:text-base text-base-content/70 py-2'>
 									View and track all your submitted brackets
 									for this tournament.
 								</p>
-								<div className='card-actions justify-end'>
+								<div className='card-actions justify-end mt-2'>
 									<Link
 										href='/brackets/view'
-										className='btn btn-sm btn-primary'
+										className='btn btn-sm md:btn-md btn-primary'
 									>
 										View Brackets
 									</Link>
@@ -269,17 +335,27 @@ export default function Dashboard() {
 							</div>
 						</div>
 
-						<div className='card bg-base-100 shadow-xl'>
-							<div className='card-body'>
-								<h3 className='card-title'>Leaderboard</h3>
-								<p>
+						{/* Card 2 */}
+						<div className='card bg-base-100 shadow-md hover:shadow-lg transition-shadow duration-300'>
+							<div className='card-body p-4 md:p-6'>
+								<h3 className='card-title text-lg md:text-xl flex items-center gap-2'>
+									<svg
+										className='w-5 h-5 text-primary'
+										fill='currentColor'
+										viewBox='0 0 20 20'
+									>
+										<path d='M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z' />
+									</svg>
+									Leaderboard
+								</h3>
+								<p className='text-sm md:text-base text-base-content/70 py-2'>
 									See how your brackets stack up against other
 									participants and our AI models.
 								</p>
-								<div className='card-actions justify-end'>
+								<div className='card-actions justify-end mt-2'>
 									<Link
 										href='/brackets/leaderboard'
-										className='btn btn-sm btn-primary'
+										className='btn btn-sm md:btn-md btn-primary'
 									>
 										Check Rankings
 									</Link>
@@ -287,17 +363,29 @@ export default function Dashboard() {
 							</div>
 						</div>
 
-						<div className='card bg-base-100 shadow-xl'>
-							<div className='card-body'>
-								<h3 className='card-title'>
+						{/* Card 3 */}
+						<div className='card bg-base-100 shadow-md hover:shadow-lg transition-shadow duration-300'>
+							<div className='card-body p-4 md:p-6'>
+								<h3 className='card-title text-lg md:text-xl flex items-center gap-2'>
+									<svg
+										className='w-5 h-5 text-primary'
+										fill='currentColor'
+										viewBox='0 0 20 20'
+									>
+										<path
+											fillRule='evenodd'
+											d='M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z'
+											clipRule='evenodd'
+										/>
+									</svg>
 									Tournament Schedule
 								</h3>
-								<p>
+								<p className='text-sm md:text-base text-base-content/70 py-2'>
 									View the complete schedule of games and
 									results as they happen.
 								</p>
-								<div className='card-actions justify-end'>
-									<button className='btn btn-sm btn-outline'>
+								<div className='card-actions justify-end mt-2'>
+									<button className='btn btn-sm md:btn-md btn-outline'>
 										Coming Soon
 									</button>
 								</div>
