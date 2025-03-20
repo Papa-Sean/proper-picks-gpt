@@ -4,7 +4,8 @@
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
-		"build": "next build",
+		"clean": "node build-helpers.js",
+		"build": "npm run clean && next build",
 		"start": "next start",
 		"lint": "next lint",
 		"firebase:deploy": "firebase deploy"

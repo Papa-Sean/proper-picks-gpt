@@ -84,9 +84,9 @@ exports.nextjs = onRequest(
 			req.path.startsWith('/brackets/view/') &&
 			!req.path.includes('[id]')
 		) {
-			// Extract the id from the path
 			const id = req.path.split('/').pop();
 			if (id) {
+				log(`Processing dynamic bracket: ${id}`);
 				// Pass along to the Next.js handler which will render the dynamic page
 				return app.prepare().then(() => handle(req, res));
 			}

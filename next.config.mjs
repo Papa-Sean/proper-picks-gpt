@@ -1,14 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-	// Keep static export for Firebase Hosting
 	output: 'export',
 
-	// This is critical for images
 	images: {
 		unoptimized: true,
 	},
 
-	// Environment variables (keep existing ones)
 	env: {
 		NEXT_PUBLIC_FIREBASE_API_KEY:
 			process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
@@ -30,7 +27,7 @@ const nextConfig = {
 			'1:729631288438:web:836928f5e6c6f600784357',
 	},
 
-	// Note: redirects don't work with static export, we handle them in firebase.json
+	// Remove any redirects config since they don't work with export
 };
 
 export default nextConfig;
