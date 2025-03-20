@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import CreateBracketContainer from '@/components/CreateBracketContainer';
 import BracketViewContainer from '@/components/BracketViewContainer';
@@ -10,15 +10,33 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 
 export default function ViewBracketPage() {
-	const { id } = useParams();
+	const router = useRouter();
+	const params = useParams();
+	// Get ID from params or session storage (for direct navigation)
+	const id =
+		params?.id ||
+		(typeof window !== 'undefined'
+			? sessionStorage.getItem('bracketId')
+			: null);
 	const { user } = useAuth();
 	const [bracket, setBracket] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 
 	useEffect(() => {
+		// Clear any stored bracketId once we've used it
+		if (typeof window !== 'undefined') {
+			sessionStorage.removeItem('bracketId');
+		}
+
 		const fetchBracket = async () => {
-			if (!id) return;
+			if (!id || id === 'fallback') {
+				setError('Invalid bracket ID');
+				setLoading(false);
+				return;
+			}
+
+			console.log('Fetching bracket with ID:', id);
 
 			try {
 				setLoading(true);
@@ -29,6 +47,7 @@ export default function ViewBracketPage() {
 
 				if (bracketDoc.exists()) {
 					const bracketData = bracketDoc.data();
+					console.log('Bracket data loaded:', bracketData.name);
 					setBracket({
 						...bracketData,
 						createdAt:
@@ -37,6 +56,7 @@ export default function ViewBracketPage() {
 							bracketData.updatedAt?.toDate?.() || new Date(),
 					});
 				} else {
+					console.error('Bracket not found with ID:', id);
 					setError('Bracket not found');
 				}
 

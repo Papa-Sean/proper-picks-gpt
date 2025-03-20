@@ -9,16 +9,38 @@
 		/>
 		<title>Proper Picks</title>
 		<script>
-			// Check if we need to redirect
+			// Process redirects
 			(function () {
+				// Check for general redirects from 404.html
 				const redirect = sessionStorage.getItem('redirect');
 				if (redirect) {
 					sessionStorage.removeItem('redirect');
-					// Only redirect if we're on the root
 					if (window.location.pathname === '/') {
-						// We'll let the SPA router handle the redirect
 						history.replaceState(null, null, redirect);
 					}
+				}
+
+				// Handle bracket redirects specifically
+				const urlParams = new URLSearchParams(window.location.search);
+				const bracketId =
+					urlParams.get('redirectToBracket') ||
+					sessionStorage.getItem('bracketId');
+
+				if (bracketId) {
+					sessionStorage.removeItem('bracketId');
+					// Clean the URL (remove the query parameter)
+					const url = new URL(window.location.href);
+					url.searchParams.delete('redirectToBracket');
+					history.replaceState(null, '', url);
+
+					// Delay slightly to ensure Next.js has initialized
+					setTimeout(() => {
+						// This uses client-side routing when the app has loaded
+						window.__NEXT_ROUTER_BASEPATH = '/';
+						window.__NEXT_DATA__ = window.__NEXT_DATA__ || {};
+						window.__NEXT_DATA__.query = { id: bracketId };
+						window.location.href = '/brackets/view/' + bracketId;
+					}, 100);
 				}
 			})();
 		</script>

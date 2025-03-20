@@ -36,11 +36,15 @@
 		"rewrites": [
 			{
 				"source": "/brackets/view/**",
-				"destination": "/brackets/view/[id]/index.html"
+				"destination": "/brackets/view/fallback.html"
 			},
 			{
 				"source": "/profile",
 				"destination": "/data-dashboard/index.html"
+			},
+			{
+				"source": "**",
+				"destination": "/index.html"
 			}
 		],
 		"redirects": [

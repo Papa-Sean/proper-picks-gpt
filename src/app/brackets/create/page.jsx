@@ -560,7 +560,8 @@ export default function CreateBracketPage() {
 			setIsSubmitting(false);
 		}
 	};
-	// Render the step modal content based on current step
+	// Replace the renderStepContent function with this improved version
+
 	const renderStepContent = () => {
 		if (currentStep <= 6) {
 			// Round selection steps
@@ -570,60 +571,63 @@ export default function CreateBracketPage() {
 
 			return (
 				<div>
-					<h3 className='text-lg font-bold mb-4'>
-						Round {currentStep}: {roundData.name}
-						<span className='text-sm font-normal ml-2 text-base-content/70'>
+					<h3 className='text-base sm:text-lg font-bold mb-2 sm:mb-4 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2'>
+						<span>
+							Round {currentStep}: {roundData.name}
+						</span>
+						<span className='text-xs sm:text-sm font-normal text-base-content/70'>
 							({completion.completed}/{completion.total}{' '}
 							selections made)
 						</span>
 					</h3>
 
-					<div className='grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-2'>
-						{games
-							// Make sure the game exists and has a valid gameId
-							.filter((game) => game && game.gameId !== undefined)
-							.map((game) => (
-								<SelectWinner
-									key={`game-${game.gameId}-round-${currentStep}`} // Make key more unique
-									game={{
-										gameId: game.gameId,
-										teamA: game.teamA,
-										teamB: game.teamB,
-										userSelectedWinner:
-											bracketSelections[currentStep][
-												game.gameId
-											] || '',
-									}}
-									teamADetails={getTeamDetails(game.teamA)}
-									teamBDetails={getTeamDetails(game.teamB)}
-									onSelectWinner={(gameId, winner) =>
-										handleSelectWinner(
-											gameId,
-											currentStep,
-											winner
-										)
-									}
-									// Only enable games that have both teams determined
-									disabled={!game.teamA || !game.teamB}
-								/>
-							))}
+					{/* Overflow container with better mobile handling */}
+					<div className='max-h-[50vh] sm:max-h-[60vh] overflow-y-auto p-1 sm:p-2 -mx-2 sm:mx-0'>
+						<div className='grid grid-cols-1 gap-2 sm:gap-4'>
+							{games
+								.filter(
+									(game) => game && game.gameId !== undefined
+								)
+								.map((game) => (
+									<SelectWinner
+										key={`game-${game.gameId}-round-${currentStep}`}
+										game={{
+											gameId: game.gameId,
+											teamA: game.teamA,
+											teamB: game.teamB,
+											userSelectedWinner:
+												bracketSelections[currentStep][
+													game.gameId
+												] || '',
+										}}
+										teamADetails={getTeamDetails(
+											game.teamA
+										)}
+										teamBDetails={getTeamDetails(
+											game.teamB
+										)}
+										onSelectWinner={(gameId, winner) =>
+											handleSelectWinner(
+												gameId,
+												currentStep,
+												winner
+											)
+										}
+										disabled={!game.teamA || !game.teamB}
+									/>
+								))}
+						</div>
 					</div>
 
-					<div className='modal-action mt-8 flex justify-between'>
-						<button
-							className='btn btn-outline'
-							onClick={handlePrevStep}
-							disabled={currentStep === 1}
-						>
-							Previous Round
-						</button>
-
-						<div className='flex-grow text-center'>
-							<div className='join'>
+					{/* Improved mobile-friendly action buttons */}
+					<div className='modal-action mt-4 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:justify-between'>
+						{/* Round navigation buttons - show as pills on mobile */}
+						<div className='order-2 sm:order-none self-center'>
+							<div className='join join-vertical sm:join-horizontal'>
 								{roundInfo.map((round) => (
 									<button
 										key={round.number}
-										className={`join-item btn btn-sm ${
+										className={`join-item btn btn-xs sm:btn-sm ${
 											currentStep === round.number
 												? 'btn-active'
 												: ''
@@ -632,19 +636,61 @@ export default function CreateBracketPage() {
 											setCurrentStep(round.number)
 										}
 									>
-										{round.number}
+										<span className='hidden sm:inline'>
+											{round.number}
+										</span>
+										<span className='sm:hidden'>
+											R{round.number}
+										</span>
 									</button>
 								))}
 							</div>
 						</div>
 
-						<button
-							className='btn btn-primary'
-							onClick={handleNextStep}
-							disabled={!isCurrentRoundComplete()}
-						>
-							{currentStep < 6 ? 'Next Round' : 'Finish & Submit'}
-						</button>
+						{/* Prev/Next buttons - full width on mobile */}
+						<div className='order-3 sm:order-none grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto'>
+							<button
+								className='btn btn-outline btn-sm'
+								onClick={handlePrevStep}
+								disabled={currentStep === 1}
+							>
+								<span className='hidden sm:inline'>
+									Previous Round
+								</span>
+								<span className='sm:hidden'>Prev</span>
+							</button>
+
+							<button
+								className='btn btn-primary btn-sm'
+								onClick={handleNextStep}
+								disabled={!isCurrentRoundComplete()}
+							>
+								{currentStep < 6 ? (
+									<>
+										<span className='hidden sm:inline'>
+											Next Round
+										</span>
+										<span className='sm:hidden'>Next</span>
+									</>
+								) : (
+									<>
+										<span className='hidden sm:inline'>
+											Finish & Submit
+										</span>
+										<span className='sm:hidden'>
+											Finish
+										</span>
+									</>
+								)}
+							</button>
+						</div>
+
+						{/* Completion indicator - top on mobile */}
+						<div className='order-1 sm:order-none self-center'>
+							<div className='badge badge-primary p-3'>
+								{completion.percent}% Complete
+							</div>
+						</div>
 					</div>
 				</div>
 			);
@@ -739,7 +785,6 @@ export default function CreateBracketPage() {
 							</div>
 						</div>
 					</div>
-
 					<div className='alert alert-info mb-6'>
 						<svg
 							xmlns='http://www.w3.org/2000/svg'
@@ -762,13 +807,12 @@ export default function CreateBracketPage() {
 							).toLocaleString()}
 						</span>
 					</div>
-
 					{/* Progress overview */}
 					<div className='mb-8'>
 						<h3 className='text-lg font-bold mb-4'>
 							Bracket Progress
 						</h3>
-						<div className='grid grid-cols-6 gap-2'>
+						<div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2'>
 							{roundInfo.map((round) => {
 								const completion = getRoundCompletion(
 									round.number
@@ -783,22 +827,25 @@ export default function CreateBracketPage() {
 										}}
 									>
 										<div className='card-body p-3 text-center'>
-											<h4 className='text-sm font-bold'>
+											<h4 className='text-xs sm:text-sm font-bold'>
 												{round.name}
 											</h4>
 											<div
-												className='radial-progress text-primary mx-auto'
+												className='radial-progress text-primary mx-auto my-1'
 												style={{
 													'--value':
 														completion.percent,
-													'--size': '3rem',
+													'--size': '2.5rem',
+													'--thickness': '3px',
 												}}
 											>
-												{completion.percent}%
+												<span className='text-xs'>
+													{completion.percent}%
+												</span>
 											</div>
 											<p className='text-xs mt-1'>
 												{completion.completed}/
-												{completion.total} games
+												{completion.total}
 											</p>
 										</div>
 									</div>
@@ -806,10 +853,9 @@ export default function CreateBracketPage() {
 							})}
 						</div>
 					</div>
-
 					{/* NCAA Tournament Bracket Preview */}
 					<div className='mb-8'>
-						<h3 className='text-lg font-bold mb-4 flex justify-between items-center'>
+						<h3 className='text-lg font-bold mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2'>
 							<span>Bracket Preview</span>
 							<button
 								className='btn btn-primary btn-sm'
@@ -819,8 +865,28 @@ export default function CreateBracketPage() {
 							</button>
 						</h3>
 
-						<div className='overflow-x-auto'>
-							<div className='min-w-[1200px]'>
+						<div className='alert alert-info mb-4 text-xs sm:text-sm'>
+							<svg
+								xmlns='http://www.w3.org/2000/svg'
+								fill='none'
+								viewBox='0 0 24 24'
+								className='stroke-current shrink-0 w-4 h-4 sm:w-6 sm:h-6'
+							>
+								<path
+									strokeLinecap='round'
+									strokeLinejoin='round'
+									strokeWidth='2'
+									d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+								></path>
+							</svg>
+							<span>
+								Scroll horizontally to view the entire bracket.
+								Tap on games to make selections.
+							</span>
+						</div>
+
+						<div className='overflow-x-auto border border-base-300 rounded-lg'>
+							<div className='min-w-[1000px] md:min-w-[1200px] p-4'>
 								<BracketViewContainer
 									games={prepareDataForBracketView()}
 									teams={tournament?.teams || []}
@@ -831,9 +897,9 @@ export default function CreateBracketPage() {
 							</div>
 						</div>
 					</div>
-
+					// Replace the naming and submission section with this
 					{/* Naming and submission */}
-					<div className='card bg-base-100 shadow-md p-6 mt-8'>
+					<div className='card bg-base-100 shadow-md p-4 sm:p-6 mt-8'>
 						<h3 className='text-lg font-bold mb-4'>
 							Name Your Bracket
 						</h3>
@@ -853,33 +919,47 @@ export default function CreateBracketPage() {
 							/>
 						</div>
 
-						<div className='mt-6 flex justify-end'>
-							<button
-								className='btn btn-primary'
-								onClick={handleSubmit}
-								disabled={isSubmitting || !bracketName.trim()}
-							>
-								{isSubmitting ? (
-									<>
-										<span className='loading loading-spinner loading-sm mr-2'></span>
-										Submitting...
-									</>
-								) : (
-									'Submit Bracket'
-								)}
-							</button>
+						<div className='mt-6'>
+							<div className='flex flex-col sm:flex-row gap-4 sm:justify-between items-center'>
+								<div className='w-full sm:w-auto order-2 sm:order-1'>
+									<button
+										className='btn btn-outline w-full sm:w-auto'
+										onClick={() => setShowStepModal(true)}
+									>
+										Back to Editing
+									</button>
+								</div>
+
+								<div className='w-full sm:w-auto order-1 sm:order-2'>
+									<button
+										className='btn btn-primary w-full sm:w-auto'
+										onClick={handleSubmit}
+										disabled={
+											isSubmitting || !bracketName.trim()
+										}
+									>
+										{isSubmitting ? (
+											<>
+												<span className='loading loading-spinner loading-sm mr-2'></span>
+												Submitting...
+											</>
+										) : (
+											'Submit Bracket'
+										)}
+									</button>
+								</div>
+							</div>
 						</div>
 					</div>
-
 					{/* Modal for step-by-step bracket building */}
 					<dialog
 						className={`modal ${showStepModal ? 'modal-open' : ''}`}
 					>
-						<div className='modal-box max-w-4xl'>
-							<h2 className='text-xl font-bold'>
+						<div className='modal-box w-11/12 max-w-4xl p-4 sm:p-6'>
+							<h2 className='text-xl font-bold mb-2'>
 								{tournament.name} - Build Your Bracket
 							</h2>
-							<div className='divider'></div>
+							<div className='divider my-2'></div>
 
 							{renderStepContent()}
 
@@ -890,6 +970,15 @@ export default function CreateBracketPage() {
 								✕
 							</button>
 						</div>
+						{/* Add backdrop click handler */}
+						<form
+							method='dialog'
+							className='modal-backdrop'
+						>
+							<button onClick={() => setShowStepModal(false)}>
+								close
+							</button>
+						</form>
 					</dialog>
 				</>
 			)}

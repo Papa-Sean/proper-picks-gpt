@@ -6,20 +6,18 @@
 			name="viewport"
 			content="width=device-width, initial-scale=1"
 		/>
-		<title>Loading Bracket...</title>
+		<title>Loading Bracket - Proper Picks</title>
 		<script>
-			// This is a fallback page for dynamic bracket routes
-			// Redirect to the actual bracket view with the ID from the URL
-			(function () {
-				const path = window.location.pathname;
-				const id = path.split('/').pop();
+			// Get the current ID from the URL
+			const path = window.location.pathname;
+			const segments = path.split('/');
+			const id = segments[segments.length - 1];
 
-				if (id && id !== 'fallback') {
-					window.location.href = '/brackets/view/' + id;
-				} else {
-					window.location.href = '/brackets/view';
-				}
-			})();
+			// Store this so our app can retrieve it
+			sessionStorage.setItem('bracketId', id);
+
+			// Redirect to the main app if we came here directly
+			window.location.href = '/?redirectToBracket=' + id;
 		</script>
 		<style>
 			body {
@@ -59,6 +57,17 @@
 			<div class="loading"></div>
 			<h1>Loading Bracket...</h1>
 			<p>Please wait while we load your bracket data.</p>
+			<noscript>
+				<p>
+					JavaScript is required to view brackets. Please enable
+					JavaScript and refresh the page.
+				</p>
+				<a
+					href="/"
+					style="color: #4f46e5; text-decoration: underline"
+					>Return to homepage</a
+				>
+			</noscript>
 		</div>
 	</body>
 </html>
