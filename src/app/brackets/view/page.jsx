@@ -4,22 +4,16 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import CreateBracketContainer from '@/components/CreateBracketContainer';
-import {
-	collection,
-	query,
-	where,
-	orderBy,
-	limit,
-	getDocs,
-} from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import Link from 'next/link';
 
-export default function BracketViewRedirectPage() {
+export default function BracketViewPage() {
 	const router = useRouter();
 	const { user, isLoading, isAuthenticated } = useAuth();
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	const [brackets, setBrackets] = useState([]);
 	const [authChecked, setAuthChecked] = useState(false);
 
 	// Handle auth check separately from bracket lookup
@@ -29,59 +23,54 @@ export default function BracketViewRedirectPage() {
 		}
 	}, [isLoading]);
 
-	// Handle redirection after auth is confirmed
+	// Fetch user brackets after auth is confirmed
 	useEffect(() => {
 		// Only run this effect after auth state is determined
 		if (!authChecked) return;
 
-		const findUserBracket = async () => {
+		const fetchUserBrackets = async () => {
 			// Only proceed if auth is no longer loading
 			if (isLoading) return;
 
-			// If no user is logged in, redirect to login
-			if (!user) {
-				console.log('No user found, redirecting to login');
-				// Save the current URL to return to after login
-				sessionStorage.setItem('authRedirect', '/brackets/view');
-				router.push('/login');
-				return;
-			}
+			// If no user is logged in, we'll show the login prompt (handled in render)
+			if (!user) return;
 
 			try {
 				setLoading(true);
 
-				// Query Firestore for the user's most recent bracket
+				// Query Firestore for all of the user's brackets
 				const bracketsRef = collection(db, 'brackets');
 				const q = query(
 					bracketsRef,
 					where('userId', '==', user.uid),
-					orderBy('createdAt', 'desc'),
-					limit(1)
+					orderBy('createdAt', 'desc')
 				);
 
 				console.log('Querying for brackets with userId:', user.uid);
 				const querySnapshot = await getDocs(q);
 
-				// Check query results
-				if (!querySnapshot.empty) {
-					// Found a bracket - redirect to it
-					const bracketId = querySnapshot.docs[0].id;
-					console.log(
-						'Found user bracket, redirecting to:',
-						bracketId
-					);
-					router.push(`/brackets/view/${bracketId}`);
-				} else {
-					// No brackets found - redirect to create page
-					console.log(
-						'No brackets found for user, redirecting to create page'
-					);
-					router.push('/brackets/create');
-				}
+				// Process brackets
+				const userBrackets = [];
+				querySnapshot.forEach((doc) => {
+					const data = doc.data();
+					userBrackets.push({
+						id: doc.id,
+						name: data.name || 'Unnamed Bracket',
+						createdAt: data.createdAt?.toDate() || new Date(),
+						points: data.points || 0,
+						maxPossible: data.maxPossible || 192,
+						tournamentName:
+							data.tournamentName || 'NCAA Tournament',
+					});
+				});
+
+				console.log(`Found ${userBrackets.length} brackets for user`);
+				setBrackets(userBrackets);
+				setLoading(false);
 			} catch (err) {
-				console.error('Error finding user bracket:', err);
+				console.error('Error fetching user brackets:', err);
 				setError(
-					`Error finding your bracket: ${
+					`Error loading your brackets: ${
 						err.message || 'Unknown error'
 					}`
 				);
@@ -89,11 +78,13 @@ export default function BracketViewRedirectPage() {
 			}
 		};
 
-		// Only try to find bracket if user is logged in
+		// Only try to find brackets if user is logged in
 		if (user && user.uid) {
-			findUserBracket();
+			fetchUserBrackets();
+		} else {
+			setLoading(false); // Not loading if no user
 		}
-	}, [authChecked, router, user, isLoading]);
+	}, [authChecked, user, isLoading]);
 
 	// Show a different message when checking auth vs. looking for brackets
 	if (isLoading || !authChecked) {
@@ -149,24 +140,24 @@ export default function BracketViewRedirectPage() {
 		);
 	}
 
-	// Display a loading state while redirection is in progress
+	// Display a loading state while fetching brackets
 	if (loading) {
 		return (
-			<CreateBracketContainer title='Locating Your Bracket...'>
+			<CreateBracketContainer title='Loading Your Brackets...'>
 				<div className='flex flex-col items-center justify-center py-12'>
 					<div className='loading loading-spinner loading-lg text-primary mb-4'></div>
 					<p className='text-lg'>
-						Searching for your existing brackets...
+						Loading your bracket submissions...
 					</p>
 				</div>
 			</CreateBracketContainer>
 		);
 	}
 
-	// Display an error if redirection fails
+	// Display an error if bracket fetching fails
 	if (error) {
 		return (
-			<CreateBracketContainer title='Error Finding Brackets'>
+			<CreateBracketContainer title='Error Loading Brackets'>
 				<div className='alert alert-error'>
 					<svg
 						xmlns='http://www.w3.org/2000/svg'
@@ -201,26 +192,108 @@ export default function BracketViewRedirectPage() {
 		);
 	}
 
-	// This should rarely be seen since we're redirecting
+	// Display the list of user brackets or a message if none found
 	return (
-		<CreateBracketContainer title='Finding Your Brackets'>
-			<div className='text-center py-8'>
-				<p>
-					If you are not redirected automatically, please use one of
-					these options:
-				</p>
-				<div className='mt-6 flex flex-col sm:flex-row gap-4 justify-center'>
+		<CreateBracketContainer title='Your Bracket Submissions'>
+			<div className='pb-6'>
+				<div className='flex justify-between items-center mb-6'>
+					<h2 className='text-2xl font-bold'>
+						Your Tournament Brackets
+					</h2>
 					<Link
 						href='/brackets/create'
 						className='btn btn-primary'
 					>
 						Create New Bracket
 					</Link>
+				</div>
+
+				{brackets.length === 0 ? (
+					// No brackets found
+					<div className='text-center py-12 bg-base-200 rounded-lg'>
+						<svg
+							xmlns='http://www.w3.org/2000/svg'
+							className='h-12 w-12 mx-auto text-base-content/50 mb-4'
+							fill='none'
+							viewBox='0 0 24 24'
+							stroke='currentColor'
+						>
+							<path
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								strokeWidth={2}
+								d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+							/>
+						</svg>
+						<h3 className='text-xl font-bold mb-2'>
+							No Brackets Found
+						</h3>
+						<p className='text-base-content/70 mb-6'>
+							You haven't created any bracket submissions yet.
+						</p>
+						<Link
+							href='/brackets/create'
+							className='btn btn-primary'
+						>
+							Create Your First Bracket
+						</Link>
+					</div>
+				) : (
+					// Display brackets in a card layout
+					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+						{brackets.map((bracket) => (
+							<div
+								key={bracket.id}
+								className='card bg-base-100 shadow-lg hover:shadow-xl transition-shadow'
+							>
+								<div className='card-body'>
+									<h3 className='card-title text-lg font-bold'>
+										{bracket.name}
+									</h3>
+									<div className='text-sm opacity-70'>
+										Created:{' '}
+										{bracket.createdAt.toLocaleDateString()}
+									</div>
+
+									<div className='stats bg-base-200 shadow-sm mt-2'>
+										<div className='stat p-2'>
+											<div className='stat-title text-xs'>
+												Score
+											</div>
+											<div className='stat-value text-primary text-xl'>
+												{bracket.points}
+											</div>
+											<div className='stat-desc text-xs'>
+												{Math.round(
+													(bracket.points /
+														bracket.maxPossible) *
+														100
+												)}
+												% complete
+											</div>
+										</div>
+									</div>
+
+									<div className='card-actions justify-end mt-4'>
+										<Link
+											href={`/brackets/view/${bracket.id}`}
+											className='btn btn-primary'
+										>
+											View Bracket
+										</Link>
+									</div>
+								</div>
+							</div>
+						))}
+					</div>
+				)}
+
+				<div className='mt-8 text-center'>
 					<Link
 						href='/brackets/leaderboard'
 						className='btn btn-outline'
 					>
-						View Leaderboard
+						View Tournament Leaderboard
 					</Link>
 				</div>
 			</div>
