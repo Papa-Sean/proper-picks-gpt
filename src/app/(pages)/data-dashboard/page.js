@@ -1,12 +1,34 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import Image from 'next/image';
 import Link from 'next/link';
 
+// Create a wrapper component for client-side only features
+function SearchParamsWrapper({ children }) {
+	return <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>;
+}
+
+// Loading skeleton
+function DashboardSkeleton() {
+	return (
+		<div className='min-h-screen bg-base-100 flex items-center justify-center'>
+			<div className='loading loading-spinner loading-lg'></div>
+		</div>
+	);
+}
+
 export default function Dashboard() {
+	return (
+		<SearchParamsWrapper>
+			<DashboardContent />
+		</SearchParamsWrapper>
+	);
+}
+
+function DashboardContent() {
 	const router = useRouter();
 	const { isAuthenticated, user } = useSelector((state) => state.auth);
 	const [mounted, setMounted] = useState(false);

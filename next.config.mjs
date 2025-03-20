@@ -8,9 +8,6 @@ const nextConfig = {
 		unoptimized: true,
 	},
 
-	// Use trailing slash to help with paths
-	trailingSlash: true,
-
 	// Environment variables (keep existing ones)
 	env: {
 		NEXT_PUBLIC_FIREBASE_API_KEY:
@@ -33,8 +30,7 @@ const nextConfig = {
 			'1:729631288438:web:836928f5e6c6f600784357',
 	},
 
-	// Note: redirects don't work with static export, but we can keep them
-	// for documentation purposes - Firebase will handle redirects
+	// Note: redirects don't work with static export, we handle them in firebase.json
 };
 
 export default nextConfig;

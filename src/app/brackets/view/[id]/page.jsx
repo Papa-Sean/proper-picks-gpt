@@ -8,41 +8,47 @@ import BracketViewContainer from '@/components/BracketViewContainer';
 import dummyTeams from '@/dummyTeams';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
+import { getBracketId } from '@/utils/bracketHelper';
 
 export default function ViewBracketPage() {
 	const router = useRouter();
 	const params = useParams();
-	// Get ID from params or session storage (for direct navigation)
-	const id =
-		params?.id ||
-		(typeof window !== 'undefined'
-			? sessionStorage.getItem('bracketId')
-			: null);
 	const { user } = useAuth();
 	const [bracket, setBracket] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 
+	// Get bracket ID from params or other sources
+	const bracketId = getBracketId(params);
+
 	useEffect(() => {
-		// Clear any stored bracketId once we've used it
+		// Clear temporary storage
 		if (typeof window !== 'undefined') {
 			sessionStorage.removeItem('bracketId');
+
+			// If we have a query parameter, clean it up
+			if (window.location.search.includes('redirectToBracket')) {
+				// Clean the URL by removing the query parameter
+				const url = new URL(window.location);
+				url.searchParams.delete('redirectToBracket');
+				window.history.replaceState({}, '', url);
+			}
 		}
 
 		const fetchBracket = async () => {
-			if (!id || id === 'fallback') {
-				setError('Invalid bracket ID');
+			if (!bracketId) {
+				setError('No bracket ID provided');
 				setLoading(false);
 				return;
 			}
 
-			console.log('Fetching bracket with ID:', id);
+			console.log('Fetching bracket with ID:', bracketId);
 
 			try {
 				setLoading(true);
 
 				// Get the document from Firestore
-				const bracketRef = doc(db, 'brackets', id);
+				const bracketRef = doc(db, 'brackets', bracketId);
 				const bracketDoc = await getDoc(bracketRef);
 
 				if (bracketDoc.exists()) {
@@ -56,7 +62,7 @@ export default function ViewBracketPage() {
 							bracketData.updatedAt?.toDate?.() || new Date(),
 					});
 				} else {
-					console.error('Bracket not found with ID:', id);
+					console.error('Bracket not found with ID:', bracketId);
 					setError('Bracket not found');
 				}
 
@@ -71,8 +77,12 @@ export default function ViewBracketPage() {
 			}
 		};
 
-		fetchBracket();
-	}, [id]);
+		if (bracketId) {
+			fetchBracket();
+		} else {
+			setLoading(false);
+		}
+	}, [bracketId]);
 
 	// The rest of your component remains unchanged
 	// ...

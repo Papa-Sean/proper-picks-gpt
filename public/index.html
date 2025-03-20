@@ -20,27 +20,20 @@
 					}
 				}
 
-				// Handle bracket redirects specifically
+				// Handle bracket redirects
 				const urlParams = new URLSearchParams(window.location.search);
-				const bracketId =
-					urlParams.get('redirectToBracket') ||
-					sessionStorage.getItem('bracketId');
+				const bracketId = urlParams.get('redirectToBracket');
 
 				if (bracketId) {
-					sessionStorage.removeItem('bracketId');
-					// Clean the URL (remove the query parameter)
-					const url = new URL(window.location.href);
-					url.searchParams.delete('redirectToBracket');
-					history.replaceState(null, '', url);
+					console.log('Found bracket redirect parameter:', bracketId);
+					// Store it in case our app needs it
+					sessionStorage.setItem('bracketId', bracketId);
 
-					// Delay slightly to ensure Next.js has initialized
-					setTimeout(() => {
-						// This uses client-side routing when the app has loaded
-						window.__NEXT_ROUTER_BASEPATH = '/';
-						window.__NEXT_DATA__ = window.__NEXT_DATA__ || {};
-						window.__NEXT_DATA__.query = { id: bracketId };
+					// If we're already on the homepage, redirect immediately
+					// This helps avoid flashing the homepage before redirecting
+					if (window.location.pathname === '/') {
 						window.location.href = '/brackets/view/' + bracketId;
-					}, 100);
+					}
 				}
 			})();
 		</script>

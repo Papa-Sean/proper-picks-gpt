@@ -310,11 +310,18 @@ export default function Navigation() {
 										Profile
 									</Link>
 								</li>
-								<li>
-									<Link href='/brackets/view'>
-										My Brackets
-									</Link>
-								</li>
+								{isAuthenticated && (
+									<>
+										<li>
+											<Link
+												href='/brackets/view'
+												className='font-medium'
+											>
+												My Brackets
+											</Link>
+										</li>
+									</>
+								)}
 								<li>
 									<button
 										onClick={handleSignOut}

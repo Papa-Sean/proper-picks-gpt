@@ -278,6 +278,7 @@ export default function BracketViewPage() {
 										<Link
 											href={`/brackets/view/${bracket.id}`}
 											className='btn btn-primary'
+											prefetch={false} // Important for static export
 										>
 											View Bracket
 										</Link>
