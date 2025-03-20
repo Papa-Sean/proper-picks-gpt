@@ -38,6 +38,14 @@
 			{
 				"source": "**",
 				"destination": "/index.html"
+			},
+			{
+				"source": "/brackets/view/**",
+				"destination": "/brackets/view/[id]/index.html"
+			},
+			{
+				"source": "/profile",
+				"destination": "/data-dashboard/index.html"
 			}
 		],
 		"headers": [
@@ -58,6 +66,13 @@
 						"value": "public, max-age=31536000, immutable"
 					}
 				]
+			}
+		],
+		"redirects": [
+			{
+				"source": "/profile",
+				"destination": "/data-dashboard",
+				"type": 301
 			}
 		]
 	},

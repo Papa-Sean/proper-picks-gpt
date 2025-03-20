@@ -16,6 +16,8 @@
 # next.js
 /.next/
 /out/
+.next/
+out/
 
 # production
 /build
@@ -52,6 +54,7 @@ firestore-debug.log
 ui-debug.log
 .runtimeconfig.json
 *-service-account.json
+firebase-export-*.json
 
 # Firebase emulator files
 **/emulator-data
@@ -68,3 +71,9 @@ ui-debug.log
 .idea/
 .vscode/
 *.sublime-*
+
+# Firebase Functions generated files
+functions/lib/
+functions/node_modules/
+functions/.env
+properpicks-fb/node_modules/

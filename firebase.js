@@ -79,6 +79,19 @@ exports.nextjs = onRequest(
 			return;
 		}
 
+		// For dynamic paths that might not be pre-rendered
+		if (
+			req.path.startsWith('/brackets/view/') &&
+			!req.path.includes('[id]')
+		) {
+			// Extract the id from the path
+			const id = req.path.split('/').pop();
+			if (id) {
+				// Pass along to the Next.js handler which will render the dynamic page
+				return app.prepare().then(() => handle(req, res));
+			}
+		}
+
 		return app.prepare().then(() => handle(req, res));
 	}
 );

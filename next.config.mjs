@@ -1,17 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-	// Keep this to tell Next.js this is an exported static site for Firebase Hosting
+	// Keep static export for Firebase Hosting
 	output: 'export',
 
-	// This is critical - without it, image optimization will fail
+	// This is critical for images
 	images: {
 		unoptimized: true,
 	},
 
-	// This helps solve redirect and 404 issues
+	// Use trailing slash to help with paths
 	trailingSlash: true,
 
-	// Additional environment variable configuration
+	// Environment variables (keep existing ones)
 	env: {
 		NEXT_PUBLIC_FIREBASE_API_KEY:
 			process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
@@ -33,16 +33,8 @@ const nextConfig = {
 			'1:729631288438:web:836928f5e6c6f600784357',
 	},
 
-	// Add redirects directly in the Next.js config
-	async redirects() {
-		return [
-			{
-				source: '/profile',
-				destination: '/data-dashboard',
-				permanent: false,
-			},
-		];
-	},
+	// Note: redirects don't work with static export, but we can keep them
+	// for documentation purposes - Firebase will handle redirects
 };
 
 export default nextConfig;
