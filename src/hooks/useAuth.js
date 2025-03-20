@@ -10,6 +10,7 @@ import {
 	signInWithPopup,
 	GoogleAuthProvider,
 	signOut,
+	createUserWithEmailAndPassword,
 } from 'firebase/auth';
 import { useDispatch, useSelector } from 'react-redux';
 import { setUser, clearUser } from '@/store/authSlice';
@@ -126,6 +127,70 @@ export function useAuth() {
 		}
 	};
 
+	// Signup with email/password
+	const signup = async (email, password) => {
+		try {
+			// Clear any previous auth states
+			dispatch({ type: 'AUTH_START' });
+
+			// Additional validation
+			if (!email || !password) {
+				throw new Error('Email and password are required');
+			}
+
+			// Create user
+			const userCredential = await createUserWithEmailAndPassword(
+				auth,
+				email,
+				password
+			);
+
+			// Get the user
+			const user = userCredential.user;
+
+			console.log('User created successfully', user.uid);
+
+			// Update Redux store and localStorage
+			dispatch({
+				type: 'LOGIN_SUCCESS',
+				payload: {
+					uid: user.uid,
+					email: user.email,
+					displayName: user.displayName || user.email?.split('@')[0],
+					photoURL: user.photoURL,
+					emailVerified: user.emailVerified,
+				},
+			});
+
+			// Save auth state to localStorage for persistence
+			if (typeof window !== 'undefined') {
+				localStorage.setItem(
+					'authState',
+					JSON.stringify({
+						isAuthenticated: true,
+						user: {
+							uid: user.uid,
+							email: user.email,
+							displayName:
+								user.displayName || user.email?.split('@')[0],
+							photoURL: user.photoURL,
+							emailVerified: user.emailVerified,
+						},
+					})
+				);
+			}
+
+			// Return the user for chaining
+			return user;
+		} catch (error) {
+			console.error('Signup error:', error);
+			dispatch({ type: 'AUTH_ERROR', payload: error.message });
+
+			// Forward the error with its original code
+			throw error;
+		}
+	};
+
 	// Login with Google
 	const signInWithGoogle = async () => {
 		try {
@@ -158,6 +223,7 @@ export function useAuth() {
 		isAuthenticated,
 		isLoading,
 		login,
+		signup,
 		signInWithGoogle,
 		logout,
 	};

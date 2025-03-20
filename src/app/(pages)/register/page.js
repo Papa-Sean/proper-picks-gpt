@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AuthInput from '@/components/AuthInput';
@@ -9,7 +9,7 @@ import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 export default function Register() {
 	const router = useRouter();
-	const { signup, signInWithGoogle } = useAuth();
+	const { signup, signInWithGoogle, isAuthenticated } = useAuth();
 	const [formData, setFormData] = useState({
 		email: '',
 		password: '',
@@ -18,6 +18,15 @@ export default function Register() {
 	const [errors, setErrors] = useState({});
 	const [loading, setLoading] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [redirectInProgress, setRedirectInProgress] = useState(false);
+
+	// Check if user is already authenticated
+	useEffect(() => {
+		if (isAuthenticated && !redirectInProgress) {
+			console.log('User already authenticated, redirecting to dashboard');
+			router.push('/data-dashboard');
+		}
+	}, [isAuthenticated, router, redirectInProgress]);
 
 	const validateForm = () => {
 		const newErrors = {};
@@ -28,6 +37,12 @@ export default function Register() {
 		if (formData.password !== formData.confirmPassword) {
 			newErrors.confirmPassword = 'Passwords do not match';
 		}
+
+		// Validate password strength
+		if (formData.password && formData.password.length < 6) {
+			newErrors.password = 'Password must be at least 6 characters';
+		}
+
 		return newErrors;
 	};
 
@@ -38,13 +53,50 @@ export default function Register() {
 		if (Object.keys(newErrors).length === 0) {
 			setLoading(true);
 			try {
+				console.log(
+					'Attempting to create account with:',
+					formData.email
+				);
 				await signup(formData.email, formData.password);
-				router.push('/data-dashboard');
+
+				// Set flag to prevent double redirects
+				setRedirectInProgress(true);
+
+				// Store a redirect flag in session storage
+				if (typeof window !== 'undefined') {
+					window.sessionStorage.setItem('accountCreated', 'true');
+				}
+
+				console.log('Account created successfully, redirecting...');
+
+				// Use a small delay to ensure Firebase auth state has updated
+				setTimeout(() => {
+					router.push('/data-dashboard');
+				}, 500);
 			} catch (err) {
+				console.error('Registration error:', err);
+
+				// Extract the specific Firebase error message
+				let errorMessage =
+					'Failed to create account. Please try again.';
+
+				// Map Firebase error codes to user-friendly messages
+				if (err.code === 'auth/email-already-in-use') {
+					errorMessage =
+						'This email is already registered. Please use a different email or sign in.';
+				} else if (err.code === 'auth/invalid-email') {
+					errorMessage = 'Please enter a valid email address.';
+				} else if (err.code === 'auth/weak-password') {
+					errorMessage =
+						'Password is too weak. Please use at least 6 characters.';
+				} else if (err.code === 'auth/network-request-failed') {
+					errorMessage =
+						'Network error. Please check your internet connection and try again.';
+				}
+
 				setErrors({
-					submit: 'Failed to create account. Please try again.',
+					submit: errorMessage,
 				});
-			} finally {
 				setLoading(false);
 			}
 		} else {
@@ -69,14 +121,68 @@ export default function Register() {
 
 	const handleGoogleSignIn = async () => {
 		try {
+			setLoading(true);
+			console.log('Attempting Google sign-in');
+
+			// Store a redirect flag to avoid redirect loops
+			if (typeof window !== 'undefined') {
+				window.sessionStorage.setItem('googleSignInAttempt', 'true');
+			}
+
 			await signInWithGoogle();
-			router.push('/data-dashboard');
+
+			// Set flag to prevent double redirects
+			setRedirectInProgress(true);
+			console.log('Google sign-in successful, redirecting...');
+
+			// Use a more reliable approach with a small delay
+			setTimeout(() => {
+				router.push('/data-dashboard');
+			}, 500);
 		} catch (err) {
+			console.error('Google sign-in error:', err);
+
+			// Extract the specific Firebase error message
+			let errorMessage =
+				'Failed to sign in with Google. Please try again.';
+
+			// Map Firebase error codes to user-friendly messages
+			if (err.code === 'auth/popup-closed-by-user') {
+				errorMessage =
+					'Sign-in popup was closed before completion. Please try again.';
+			} else if (err.code === 'auth/popup-blocked') {
+				errorMessage =
+					'Sign-in popup was blocked. Please allow popups for this site and try again.';
+			} else if (err.code === 'auth/cancelled-popup-request') {
+				errorMessage = 'Multiple popups detected. Please try again.';
+			} else if (err.code === 'auth/network-request-failed') {
+				errorMessage =
+					'Network error. Please check your internet connection and try again.';
+			}
+
 			setErrors({
-				submit: 'Failed to sign in with Google. Please try again.',
+				submit: errorMessage,
 			});
+
+			if (typeof window !== 'undefined') {
+				window.sessionStorage.removeItem('googleSignInAttempt');
+			}
+
+			setLoading(false);
 		}
 	};
+
+	// Return early if already authenticated
+	if (isAuthenticated && !loading) {
+		return (
+			<div className='min-h-screen bg-base-100 flex items-center justify-center'>
+				<div className='text-center'>
+					<div className='loading loading-spinner loading-lg'></div>
+					<p className='mt-4'>Already signed in, redirecting...</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className='min-h-screen bg-base-100 py-8 px-4 sm:px-6 lg:px-8'>
@@ -107,6 +213,8 @@ export default function Register() {
 							value={formData.email}
 							onChange={handleChange}
 							error={errors.email}
+							placeholder='Enter your email'
+							autoComplete='email'
 						/>
 						<AuthInput
 							label='Password'
@@ -115,6 +223,8 @@ export default function Register() {
 							value={formData.password}
 							onChange={handleChange}
 							error={errors.password}
+							placeholder='Create a password (min. 6 characters)'
+							autoComplete='new-password'
 						/>
 						<AuthInput
 							label='Confirm Password'
@@ -123,13 +233,22 @@ export default function Register() {
 							value={formData.confirmPassword}
 							onChange={handleChange}
 							error={errors.confirmPassword}
+							placeholder='Confirm your password'
+							autoComplete='new-password'
 						/>
 						<button
 							type='submit'
 							disabled={loading}
 							className='btn btn-primary btn-block mt-6'
 						>
-							{loading ? 'Creating account...' : 'Create account'}
+							{loading ? (
+								<div className='flex items-center justify-center'>
+									<span className='loading loading-spinner loading-sm mr-2'></span>
+									Creating account...
+								</div>
+							) : (
+								'Create account'
+							)}
 						</button>
 						<div className='relative my-4'>
 							<div className='absolute inset-0 flex items-center'>
@@ -187,7 +306,7 @@ export default function Register() {
 					<div className='mt-6 text-center'>
 						<Link
 							href='/login'
-							className=' hover:text-indigo-500'
+							className='hover:text-indigo-500'
 						>
 							Already have an account? Sign in
 						</Link>
