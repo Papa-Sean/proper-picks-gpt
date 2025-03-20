@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1"
+		/>
+		<title>Loading Bracket...</title>
+		<script>
+			// This is a fallback page for dynamic bracket routes
+			// Redirect to the actual bracket view with the ID from the URL
+			(function () {
+				const path = window.location.pathname;
+				const id = path.split('/').pop();
+
+				if (id && id !== 'fallback') {
+					window.location.href = '/brackets/view/' + id;
+				} else {
+					window.location.href = '/brackets/view';
+				}
+			})();
+		</script>
+		<style>
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				margin: 0;
+				padding: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				min-height: 100vh;
+				background-color: #f9fafb;
+			}
+			.container {
+				text-align: center;
+				padding: 2rem;
+				max-width: 500px;
+			}
+			.loading {
+				display: inline-block;
+				width: 50px;
+				height: 50px;
+				border: 3px solid rgba(79, 70, 229, 0.3);
+				border-radius: 50%;
+				border-top-color: #4f46e5;
+				animation: spin 1s ease-in-out infinite;
+				margin-bottom: 1rem;
+			}
+			@keyframes spin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="loading"></div>
+			<h1>Loading Bracket...</h1>
+			<p>Please wait while we load your bracket data.</p>
+		</div>
+	</body>
+</html>

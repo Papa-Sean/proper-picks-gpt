@@ -9,12 +9,6 @@ import dummyTeams from '@/dummyTeams';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 
-// This is required for static export - will generate a fallback page
-// that client-side renders the actual bracket when JavaScript runs
-export function generateStaticParams() {
-	return [{ id: 'fallback' }];
-}
-
 export default function ViewBracketPage() {
 	const { id } = useParams();
 	const { user } = useAuth();
@@ -59,6 +53,9 @@ export default function ViewBracketPage() {
 
 		fetchBracket();
 	}, [id]);
+
+	// The rest of your component remains unchanged
+	// ...
 
 	// Prepare bracket data for BracketViewContainer
 	const prepareGamesForBracketView = () => {
