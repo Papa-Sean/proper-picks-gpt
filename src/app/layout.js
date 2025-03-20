@@ -15,6 +15,25 @@ export default function RootLayout({ children }) {
 	const publicRoutes = ['/', '/login', '/register', '/reset-password'];
 	const isPublicRoute = publicRoutes.some((route) => pathname === route);
 
+	// Add this useEffect to your layout component
+	useEffect(() => {
+		// One-time auth state cleaner - only run once
+		if (typeof window !== 'undefined') {
+			// Check if we need to clean up auth state
+			const cleanupAuth = localStorage.getItem('authCleanupNeeded');
+			if (!cleanupAuth) {
+				// Reset all redirect markers and counts
+				localStorage.removeItem('redirectStarted');
+				localStorage.removeItem('redirectCount');
+
+				// Mark that we've done the cleanup
+				localStorage.setItem('authCleanupNeeded', 'false');
+
+				console.log('One-time auth state cleanup complete');
+			}
+		}
+	}, []);
+
 	return (
 		<html lang='en'>
 			<head>

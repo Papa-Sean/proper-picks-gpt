@@ -11,11 +11,24 @@ const loadAuthState = () => {
 		if (serializedAuth === null) {
 			return { user: null, isAuthenticated: false };
 		}
+
+		// Add timestamp validation - reject auth data older than 24 hours
 		const parsedAuth = JSON.parse(serializedAuth);
+
+		if (
+			!parsedAuth.timestamp ||
+			Date.now() - parsedAuth.timestamp > 24 * 60 * 60 * 1000
+		) {
+			console.log('Auth data expired or invalid, clearing');
+			localStorage.removeItem('auth');
+			return { user: null, isAuthenticated: false };
+		}
+
 		console.log('Loaded auth state from localStorage:', parsedAuth);
 		return parsedAuth;
 	} catch (err) {
 		console.error('Error loading auth state:', err);
+		localStorage.removeItem('auth');
 		return { user: null, isAuthenticated: false };
 	}
 };
@@ -45,10 +58,14 @@ export const authSlice = createSlice({
 			state.user = action.payload;
 			state.isAuthenticated = true;
 
-			// Save to localStorage on the client side
+			// Save to localStorage on the client side with timestamp
 			if (typeof window !== 'undefined') {
-				localStorage.setItem('auth', JSON.stringify(state));
-				console.log('Saved auth state to localStorage:', state);
+				const stateToSave = {
+					...state,
+					timestamp: Date.now(),
+				};
+				localStorage.setItem('auth', JSON.stringify(stateToSave));
+				console.log('Saved auth state to localStorage:', stateToSave);
 			}
 		},
 		clearUser: (state) => {

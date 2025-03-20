@@ -65,6 +65,13 @@ export function useAuth() {
 	const login = async (email, password) => {
 		try {
 			console.log('[AUTH] Logging in with email/password...');
+
+			// Log actual config values being used (without exposing the API key)
+			console.log(
+				'[AUTH] Using Firebase project:',
+				auth.app.options.projectId
+			);
+
 			const userCredential = await signInWithEmailAndPassword(
 				auth,
 				email,
@@ -94,7 +101,28 @@ export function useAuth() {
 			return userCredential.user;
 		} catch (error) {
 			console.error('[AUTH] Login error:', error.code, error.message);
-			throw error;
+
+			// Provide more specific error messages
+			if (error.code === 'auth/invalid-credential') {
+				console.error(
+					'[AUTH] Invalid credentials. Check that a user exists with this email/password.'
+				);
+				throw new Error(
+					"Invalid email or password. Please try again or register if you don't have an account."
+				);
+			} else if (error.code === 'auth/user-not-found') {
+				console.error('[AUTH] User not found. Please register first.');
+				throw new Error(
+					'No account found with this email. Please sign up first.'
+				);
+			} else if (error.code === 'auth/network-request-failed') {
+				console.error('[AUTH] Network error when contacting Firebase.');
+				throw new Error(
+					'Network error. Please check your internet connection and try again.'
+				);
+			} else {
+				throw error;
+			}
 		}
 	};
 

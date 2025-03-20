@@ -1,0 +1,30 @@
+<!-- This file is not necessary for Next.js but helps with Firebase hosting redirects -->
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1"
+		/>
+		<title>Proper Picks</title>
+		<script>
+			// Check if we need to redirect
+			(function () {
+				const redirect = sessionStorage.getItem('redirect');
+				if (redirect) {
+					sessionStorage.removeItem('redirect');
+					// Only redirect if we're on the root
+					if (window.location.pathname === '/') {
+						// We'll let the SPA router handle the redirect
+						history.replaceState(null, null, redirect);
+					}
+				}
+			})();
+		</script>
+	</head>
+	<body>
+		<!-- This is just a fallback, Next.js will render the actual app -->
+		<div id="root"></div>
+	</body>
+</html>

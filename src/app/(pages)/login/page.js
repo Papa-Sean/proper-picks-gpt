@@ -44,49 +44,52 @@ export default function Login() {
 	// Update your handleSubmit function
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		const newErrors = validateForm();
+		setLoading(true);
+
+		// Validate form
+		const newErrors = {};
+
+		if (!formData.email) {
+			newErrors.email = 'Email is required';
+		}
+
+		if (!formData.password) {
+			newErrors.password = 'Password is required';
+		}
 
 		if (Object.keys(newErrors).length === 0) {
-			setLoading(true);
 			try {
-				console.log('Attempting login with:', formData.email);
-
-				// Flag to prevent double redirects (client-side only)
-				if (typeof window !== 'undefined') {
-					window.sessionStorage.setItem('loginInProgress', 'true');
-				}
-
+				console.log(`Attempting login with: ${formData.email}`);
 				await login(formData.email, formData.password);
-				console.log('Login API call succeeded');
 
-				// Clear any redirect markers
+				// Don't try to redirect immediately - let AuthProvider handle it
+				const redirectUrl = getRedirectUrl();
+				console.log(`Login successful, redirecting to: ${redirectUrl}`);
+
+				// Clear localStorage redirect markers before redirecting
 				if (typeof window !== 'undefined') {
 					localStorage.removeItem('redirectStarted');
+					localStorage.removeItem('redirectCount');
+					window.sessionStorage.removeItem('loginInProgress');
 				}
 
-				// Get redirect destination
-				const redirectUrl = getRedirectUrl() || '/data-dashboard';
-				console.log('Will redirect to:', redirectUrl);
-
-				// For Netlify, use a simple redirect with slight delay
-				setTimeout(() => {
-					if (typeof window !== 'undefined') {
-						window.sessionStorage.removeItem('loginInProgress');
-						window.location.href = redirectUrl;
-					}
-				}, 500);
+				// Always use router.push instead of window.location for Next.js
+				router.push(redirectUrl);
 			} catch (err) {
 				console.error('Login failed:', err);
 				setErrors({
 					submit: 'Failed to login. Please check your credentials.',
 				});
+
 				if (typeof window !== 'undefined') {
 					window.sessionStorage.removeItem('loginInProgress');
 				}
+
 				setLoading(false);
 			}
 		} else {
 			setErrors(newErrors);
+			setLoading(false);
 		}
 	};
 

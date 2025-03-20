@@ -17,6 +17,7 @@
 		"@headlessui/react": "^2.2.0",
 		"@heroicons/react": "^2.2.0",
 		"@reduxjs/toolkit": "^2.6.1",
+		"daisyui": "^4.12.24",
 		"firebase": "^11.4.0",
 		"next": "15.2.1",
 		"react": "^19.0.0",
@@ -25,9 +26,10 @@
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3",
-		"@netlify/plugin-nextjs": "^5.10.1",
-		"@next/env": "^15.2.3",
-		"@tailwindcss/postcss": "^4",
-		"firebase-tools": "^13.34.0"
+		"autoprefixer": "^10.4.21",
+		"eslint": "^8.57.0",
+		"eslint-config-next": "15.2.1",
+		"postcss": "^8.5.3",
+		"tailwindcss": "^3.4.17"
 	}
 }

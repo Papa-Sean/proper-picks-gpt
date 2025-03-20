@@ -30,8 +30,13 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +44,27 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.runtimeconfig.json
+*-service-account.json
+
+# Firebase emulator files
+**/emulator-data
+
+# Next.js exported files
+/out/
+
+# Temporary files
+*.tmp
+*.swp
+.DS_Store
+
+# IDE specific files
+.idea/
+.vscode/
+*.sublime-*

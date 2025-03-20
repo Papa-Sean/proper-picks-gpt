@@ -17,6 +17,35 @@ export default function Navigation() {
 	// Important: Use this to defer client-side rendering until after hydration
 	const [isClient, setIsClient] = useState(false);
 
+	// Add this at the beginning of your component
+	useEffect(() => {
+		// Detect and break redirect loops
+		if (typeof window !== 'undefined') {
+			const redirectCount = parseInt(
+				localStorage.getItem('redirectCount') || '0'
+			);
+
+			if (redirectCount > 5) {
+				console.log('Breaking potential redirect loop');
+				localStorage.removeItem('redirectCount');
+				localStorage.removeItem('redirectStarted');
+				localStorage.removeItem('auth'); // Force re-authentication
+				window.location.href = '/login';
+				return;
+			}
+
+			localStorage.setItem(
+				'redirectCount',
+				(redirectCount + 1).toString()
+			);
+
+			// Reset the counter after 5 seconds of no redirects
+			setTimeout(() => {
+				localStorage.setItem('redirectCount', '0');
+			}, 5000);
+		}
+	}, []);
+
 	// Set isClient to true once component mounts on client side
 	useEffect(() => {
 		setIsClient(true);

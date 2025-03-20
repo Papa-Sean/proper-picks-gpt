@@ -1,15 +1,23 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /brackets/{bracketId} {
-      allow read: if true; // Anyone can view brackets
-      allow create: if request.auth != null; // Must be logged in to create
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId; // Only owner can edit/delete
+    // Allow anyone to read public data
+    match /tournaments/{tournamentId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
     }
     
-    match /tournaments/{tournamentId} {
-      allow read: if true; // Anyone can view tournaments
-      allow write: if request.auth != null && request.auth.token.admin == true; // Only admins can modify
+    // Allow authenticated users to read all brackets
+    match /brackets/{bracketId} {
+      allow read: if true;  // Anyone can view brackets
+      allow create: if request.auth != null;  // Must be logged in to create
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;  // Only owner can edit/delete
+    }
+    
+    // User profiles
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
