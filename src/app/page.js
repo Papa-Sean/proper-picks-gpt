@@ -1,10 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import LoadingWrapper from '@/components/LoadingWrapper';
 
 export default function Home() {
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [firstLoad, setFirstLoad] = useState(true);
+
+	// Check if this is the first time visiting the site in this session
+	useEffect(() => {
+		// Check session storage to see if we've shown the loading animation before
+		const hasVisitedBefore = sessionStorage.getItem('hasVisitedHomepage');
+
+		if (hasVisitedBefore) {
+			setFirstLoad(false);
+		} else {
+			// Mark that we've shown the loading animation
+			sessionStorage.setItem('hasVisitedHomepage', 'true');
+		}
+
+		// Cleanup
+		return () => {
+			// If component unmounts, we've definitely visited
+			sessionStorage.setItem('hasVisitedHomepage', 'true');
+		};
+	}, []);
 
 	const FeatureCard = ({ title, description }) => {
 		return (
@@ -17,7 +38,8 @@ export default function Home() {
 		);
 	};
 
-	return (
+	// Render the content, wrapped in LoadingWrapper if it's the first load
+	const content = (
 		<div className='min-h-screen bg-base-100 py-8 px-4 sm:px-6 lg:px-8'>
 			{/* Main Container */}
 			<div className='max-w-7xl mx-auto'>
@@ -107,5 +129,12 @@ export default function Home() {
 				)}
 			</div>
 		</div>
+	);
+
+	// If it's the first load, wrap content in LoadingWrapper with 10 seconds duration
+	return firstLoad ? (
+		<LoadingWrapper minLoadTime={10000}>{content}</LoadingWrapper>
+	) : (
+		content
 	);
 }
