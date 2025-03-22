@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import LoadingWrapper from '@/components/LoadingWrapper';
+import HackerLoadingModal from '@/components/HackerLoadingModal';
 
 export default function Home() {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [firstLoad, setFirstLoad] = useState(true);
+	const [modalContent, setModalContent] = useState(null);
 
 	// Check if this is the first time visiting the site in this session
 	useEffect(() => {
@@ -26,6 +28,38 @@ export default function Home() {
 			sessionStorage.setItem('hasVisitedHomepage', 'true');
 		};
 	}, []);
+
+	// Auto-close modal effect
+	useEffect(() => {
+		let closeTimer;
+		if (isModalOpen) {
+			closeTimer = setTimeout(() => {
+				setIsModalOpen(false);
+			}, 10000); // Auto-close after 10 seconds
+		}
+
+		return () => {
+			if (closeTimer) clearTimeout(closeTimer);
+		};
+	}, [isModalOpen]);
+
+	const handleDontClick = () => {
+		// Set the content for what should appear after the hacker animation
+		setModalContent(
+			<div className='text-center'>
+				<h3 className='text-xl font-semibold mb-4 dark:text-white'>
+					Now why would you do that?
+				</h3>
+				<button
+					onClick={() => setIsModalOpen(false)}
+					className='bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200'
+				>
+					Close
+				</button>
+			</div>
+		);
+		setIsModalOpen(true);
+	};
 
 	const FeatureCard = ({ title, description }) => {
 		return (
@@ -96,7 +130,7 @@ export default function Home() {
 						Ready to elevate your sports analysis?
 					</p>
 					<button
-						onClick={() => setIsModalOpen(true)}
+						onClick={handleDontClick}
 						className='btn btn-primary font-semibold py-3 px-8 rounded-lg transition-colors duration-200 mr-4'
 					>
 						Don't Click
@@ -109,23 +143,15 @@ export default function Home() {
 					</Link>
 				</div>
 
-				{/* Modal */}
+				{/* Hacker Modal */}
 				{isModalOpen && (
-					<div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-						<div className='bg-white dark:bg-gray-800 rounded-lg p-8 max-w-sm w-full mx-4 shadow-xl'>
-							<div className='text-center'>
-								<h3 className='text-xl font-semibold mb-4 dark:text-white'>
-									Now why would you do that?
-								</h3>
-								<button
-									onClick={() => setIsModalOpen(false)}
-									className='bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200'
-								>
-									Close
-								</button>
+					<HackerLoadingModal duration={10000}>
+						<div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+							<div className='bg-white dark:bg-gray-800 rounded-lg p-8 max-w-sm w-full mx-4 shadow-xl'>
+								{modalContent}
 							</div>
 						</div>
-					</div>
+					</HackerLoadingModal>
 				)}
 			</div>
 		</div>
