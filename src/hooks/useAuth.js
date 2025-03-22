@@ -1,230 +1,175 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { auth } from '@/config/firebase';
+import { useEffect, useState, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import {
-	onAuthStateChanged,
-	setPersistence,
-	browserLocalPersistence,
 	signInWithEmailAndPassword,
+	createUserWithEmailAndPassword,
+	signOut,
 	signInWithPopup,
 	GoogleAuthProvider,
-	signOut,
-	createUserWithEmailAndPassword,
 } from 'firebase/auth';
-import { useDispatch, useSelector } from 'react-redux';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '@/config/firebase';
 import { setUser, clearUser } from '@/store/authSlice';
 
 export function useAuth() {
-	const dispatch = useDispatch();
 	const { user, isAuthenticated } = useSelector((state) => state.auth);
 	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState(null);
+	const dispatch = useDispatch();
+	const [isClientSide, setIsClientSide] = useState(false);
 
-	// Set up Firebase auth state listener
 	useEffect(() => {
-		console.log('Setting up auth state listener...');
+		setIsClientSide(true);
 
-		// Set persistence to LOCAL - this is crucial for login persistence
-		setPersistence(auth, browserLocalPersistence).catch((error) => {
-			console.error('Auth persistence error:', error);
-		});
-
-		const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-			console.log(
-				'Auth state changed:',
-				authUser ? 'User logged in' : 'No user'
-			);
-
-			if (authUser) {
-				// User is signed in
-				const userData = {
-					uid: authUser.uid,
-					email: authUser.email,
-					displayName:
-						authUser.displayName ||
-						authUser.email?.split('@')[0] ||
-						'User',
-					photoURL: authUser.photoURL,
-				};
-
-				console.log('Dispatching setUser with:', userData);
-				dispatch(setUser(userData));
-			} else {
-				// User is signed out
-				console.log('Dispatching clearUser');
-				dispatch(clearUser());
-			}
-
+		// After we confirm we're on client-side, check if we should be loading
+		const checkAuth = setTimeout(() => {
 			setIsLoading(false);
-		});
+		}, 1000);
 
-		// Cleanup subscription on unmount
-		return () => unsubscribe();
-	}, [dispatch]);
+		return () => clearTimeout(checkAuth);
+	}, []);
 
-	// Login with email/password
-	const login = async (email, password) => {
+	const login = useCallback(async (email, password) => {
+		setIsLoading(true);
+		setError(null);
 		try {
-			console.log('[AUTH] Logging in with email/password...');
-
-			// Log actual config values being used (without exposing the API key)
-			console.log(
-				'[AUTH] Using Firebase project:',
-				auth.app.options.projectId
-			);
-
 			const userCredential = await signInWithEmailAndPassword(
 				auth,
 				email,
 				password
 			);
-			console.log(
-				'[AUTH] Login successful for user:',
-				userCredential.user.uid
-			);
-
-			// Make sure Redux state is updated with the user
-			const userData = {
-				uid: userCredential.user.uid,
-				email: userCredential.user.email,
-				displayName:
-					userCredential.user.displayName ||
-					userCredential.user.email?.split('@')[0] ||
-					'User',
-				photoURL: userCredential.user.photoURL,
-			};
-
-			// Ensure the user data is set in Redux immediately
-			dispatch(setUser(userData));
-
-			console.log('[AUTH] User state updated in Redux');
-
 			return userCredential.user;
-		} catch (error) {
-			console.error('[AUTH] Login error:', error.code, error.message);
-
-			// Provide more specific error messages
-			if (error.code === 'auth/invalid-credential') {
-				console.error(
-					'[AUTH] Invalid credentials. Check that a user exists with this email/password.'
-				);
-				throw new Error(
-					"Invalid email or password. Please try again or register if you don't have an account."
-				);
-			} else if (error.code === 'auth/user-not-found') {
-				console.error('[AUTH] User not found. Please register first.');
-				throw new Error(
-					'No account found with this email. Please sign up first.'
-				);
-			} else if (error.code === 'auth/network-request-failed') {
-				console.error('[AUTH] Network error when contacting Firebase.');
-				throw new Error(
-					'Network error. Please check your internet connection and try again.'
-				);
-			} else {
-				throw error;
-			}
+		} catch (err) {
+			setError(err.message);
+			throw err;
+		} finally {
+			setIsLoading(false);
 		}
-	};
+	}, []);
 
-	// Signup with email/password
-	const signup = async (email, password) => {
+	const signup = useCallback(async (email, password) => {
+		setIsLoading(true);
+		setError(null);
 		try {
-			// Clear any previous auth states
-			dispatch({ type: 'AUTH_START' });
-
-			// Additional validation
-			if (!email || !password) {
-				throw new Error('Email and password are required');
-			}
-
-			// Create user
 			const userCredential = await createUserWithEmailAndPassword(
 				auth,
 				email,
 				password
 			);
-
-			// Get the user
-			const user = userCredential.user;
-
-			console.log('User created successfully', user.uid);
-
-			// Update Redux store and localStorage
-			dispatch({
-				type: 'LOGIN_SUCCESS',
-				payload: {
-					uid: user.uid,
-					email: user.email,
-					displayName: user.displayName || user.email?.split('@')[0],
-					photoURL: user.photoURL,
-					emailVerified: user.emailVerified,
-				},
-			});
-
-			// Save auth state to localStorage for persistence
-			if (typeof window !== 'undefined') {
-				localStorage.setItem(
-					'authState',
-					JSON.stringify({
-						isAuthenticated: true,
-						user: {
-							uid: user.uid,
-							email: user.email,
-							displayName:
-								user.displayName || user.email?.split('@')[0],
-							photoURL: user.photoURL,
-							emailVerified: user.emailVerified,
-						},
-					})
-				);
-			}
-
-			// Return the user for chaining
-			return user;
-		} catch (error) {
-			console.error('Signup error:', error);
-			dispatch({ type: 'AUTH_ERROR', payload: error.message });
-
-			// Forward the error with its original code
-			throw error;
+			return userCredential.user;
+		} catch (err) {
+			setError(err.message);
+			throw err;
+		} finally {
+			setIsLoading(false);
 		}
-	};
+	}, []);
 
-	// Login with Google
-	const signInWithGoogle = async () => {
+	const logout = useCallback(async () => {
+		setIsLoading(true);
+		setError(null);
 		try {
-			console.log('Logging in with Google...');
+			await signOut(auth);
+			dispatch(clearUser());
+			if (isClientSide) {
+				localStorage.removeItem('auth');
+			}
+		} catch (err) {
+			setError(err.message);
+			throw err;
+		} finally {
+			setIsLoading(false);
+		}
+	}, [dispatch, isClientSide]);
+
+	const signInWithGoogle = useCallback(async () => {
+		setIsLoading(true);
+		setError(null);
+		try {
 			const provider = new GoogleAuthProvider();
 			const userCredential = await signInWithPopup(auth, provider);
-			console.log('Google login successful:', userCredential.user.uid);
 			return userCredential.user;
-		} catch (error) {
-			console.error('Google login error:', error.code, error.message);
-			throw error;
+		} catch (err) {
+			setError(err.message);
+			throw err;
+		} finally {
+			setIsLoading(false);
 		}
-	};
+	}, []);
 
-	// Logout
-	const logout = async () => {
+	const refreshUserToken = async () => {
+		if (!isClientSide) return;
+
 		try {
-			console.log('Signing out...');
-			await signOut(auth);
-			console.log('Sign out successful');
-			return true;
-		} catch (error) {
-			console.error('Sign out error:', error);
-			throw error;
+			if (auth.currentUser) {
+				// Force token refresh
+				await auth.currentUser.getIdToken(true);
+				console.log('User token refreshed');
+
+				// Check if user is admin in Firestore
+				const adminDocRef = doc(db, 'settings', 'admins');
+				const adminDoc = await getDoc(adminDocRef);
+
+				if (adminDoc.exists()) {
+					const data = adminDoc.data();
+					const adminIds = data.adminIds || [];
+					const isUserAdmin = adminIds.includes(auth.currentUser.uid);
+
+					// Save admin status to localStorage for persistence
+					const currentAuth = JSON.parse(
+						localStorage.getItem('auth') || '{}'
+					);
+					localStorage.setItem(
+						'auth',
+						JSON.stringify({
+							...currentAuth,
+							user: {
+								...(currentAuth.user || {}),
+								isAdmin: isUserAdmin,
+							},
+							isAdmin: isUserAdmin,
+							timestamp: Date.now(),
+						})
+					);
+
+					// Update Redux store with refreshed admin status
+					dispatch(
+						setUser({
+							...(auth.currentUser || {}),
+							uid: auth.currentUser.uid,
+							email: auth.currentUser.email,
+							displayName:
+								auth.currentUser.displayName ||
+								auth.currentUser.email?.split('@')[0] ||
+								'User',
+							photoURL: auth.currentUser.photoURL,
+							isAdmin: isUserAdmin,
+						})
+					);
+
+					return isUserAdmin;
+				}
+			}
+		} catch (err) {
+			console.error('Error refreshing token:', err);
 		}
+
+		return false;
 	};
 
 	return {
 		user,
 		isAuthenticated,
+		isAdmin: user?.isAdmin || false,
 		isLoading,
+		error,
 		login,
 		signup,
-		signInWithGoogle,
 		logout,
+		signInWithGoogle,
+		refreshUserToken,
+		isClientSide,
 	};
 }

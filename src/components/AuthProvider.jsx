@@ -1,20 +1,30 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useDispatch } from 'react-redux';
-import { setUser, clearUser } from '@/store/authSlice'; // Changed from userSlice to authSlice
-import { auth } from '@/config/firebase'; // Changed from @/firebase to @/config/firebase
+import { setUser, clearUser } from '@/store/authSlice';
+import { auth, db } from '@/config/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function AuthProvider({ children }) {
 	const { isAuthenticated, isLoading } = useAuth();
 	const router = useRouter();
 	const pathname = usePathname();
 	const dispatch = useDispatch();
+	const [isClient, setIsClient] = useState(false);
+
+	// This effect runs once to mark that we're on the client
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
 
 	useEffect(() => {
+		// Skip server-side execution
+		if (!isClient) return;
+
 		// List of routes that don't require authentication
 		const publicRoutes = ['/', '/login', '/register', '/reset-password'];
 		const isPublicRoute = publicRoutes.some(
@@ -25,25 +35,22 @@ export default function AuthProvider({ children }) {
 		if (isLoading) return;
 
 		// Add a quick bail-out if we're getting in a redirect loop
-		if (typeof window !== 'undefined') {
-			const lastRedirect = localStorage.getItem('redirectStarted');
-			const redirectCount = parseInt(
-				localStorage.getItem('redirectCount') || '0',
-				10
-			);
+		const lastRedirect = localStorage.getItem('redirectStarted');
+		const redirectCount = parseInt(
+			localStorage.getItem('redirectCount') || '0',
+			10
+		);
 
-			if (lastRedirect) {
-				// If we've attempted a redirect in the last 2 seconds, don't try again
-				const timeSinceRedirect =
-					Date.now() - parseInt(lastRedirect, 10);
-				if (timeSinceRedirect < 2000 || redirectCount > 3) {
-					console.log(
-						'Recent redirect detected, preventing redirect loop'
-					);
-					localStorage.removeItem('redirectStarted');
-					localStorage.removeItem('redirectCount');
-					return;
-				}
+		if (lastRedirect) {
+			// If we've attempted a redirect in the last 2 seconds, don't try again
+			const timeSinceRedirect = Date.now() - parseInt(lastRedirect, 10);
+			if (timeSinceRedirect < 2000 || redirectCount > 3) {
+				console.log(
+					'Recent redirect detected, preventing redirect loop'
+				);
+				localStorage.removeItem('redirectStarted');
+				localStorage.removeItem('redirectCount');
+				return;
 			}
 		}
 
@@ -51,20 +58,18 @@ export default function AuthProvider({ children }) {
 		if (isAuthenticated && pathname === '/login') {
 			console.log('User authenticated, redirecting from login');
 			// Mark that we've started a redirect and increment count
-			if (typeof window !== 'undefined') {
-				const redirectCount = parseInt(
-					localStorage.getItem('redirectCount') || '0',
-					10
-				);
-				localStorage.setItem(
-					'redirectCount',
-					(redirectCount + 1).toString()
-				);
-				localStorage.setItem('redirectStarted', Date.now().toString());
+			const redirectCount = parseInt(
+				localStorage.getItem('redirectCount') || '0',
+				10
+			);
+			localStorage.setItem(
+				'redirectCount',
+				(redirectCount + 1).toString()
+			);
+			localStorage.setItem('redirectStarted', Date.now().toString());
 
-				// Always redirect to data-dashboard instead of profile
-				window.location.href = '/data-dashboard';
-			}
+			// Always redirect to data-dashboard instead of profile
+			window.location.href = '/data-dashboard';
 			return;
 		}
 
@@ -73,29 +78,30 @@ export default function AuthProvider({ children }) {
 			console.log('User not authenticated, redirecting to login');
 
 			// Mark that we've started a redirect and increment count
-			if (typeof window !== 'undefined') {
-				const redirectCount = parseInt(
-					localStorage.getItem('redirectCount') || '0',
-					10
-				);
-				localStorage.setItem(
-					'redirectCount',
-					(redirectCount + 1).toString()
-				);
-				localStorage.setItem('redirectStarted', Date.now().toString());
+			const redirectCount = parseInt(
+				localStorage.getItem('redirectCount') || '0',
+				10
+			);
+			localStorage.setItem(
+				'redirectCount',
+				(redirectCount + 1).toString()
+			);
+			localStorage.setItem('redirectStarted', Date.now().toString());
 
-				// Save the current URL to return after login
-				sessionStorage.setItem('authRedirect', pathname);
+			// Save the current URL to return after login
+			sessionStorage.setItem('authRedirect', pathname);
 
-				window.location.href = '/login';
-			}
+			window.location.href = '/login';
 		}
-	}, [isAuthenticated, isLoading, pathname, router]);
+	}, [isAuthenticated, isLoading, pathname, router, isClient]);
 
 	// Add this useEffect before the auth state listener
 	useEffect(() => {
+		// Skip server-side execution
+		if (!isClient) return;
+
 		// Try to recover auth state from localStorage on initial load
-		if (typeof window !== 'undefined' && !isAuthenticated) {
+		if (!isAuthenticated) {
 			try {
 				const savedAuth = localStorage.getItem('auth');
 				if (savedAuth) {
@@ -114,54 +120,88 @@ export default function AuthProvider({ children }) {
 				localStorage.removeItem('auth');
 			}
 		}
-	}, [isAuthenticated, dispatch]);
+	}, [isAuthenticated, dispatch, isClient]);
 
 	useEffect(() => {
+		// Skip server-side execution
+		if (!isClient) return;
+
 		// Start auth listener
 		console.log('Setting up auth state listener...');
 
-		const unsubscribe = onAuthStateChanged(auth, (user) => {
+		const unsubscribe = onAuthStateChanged(auth, async (user) => {
 			if (user) {
 				console.log('Auth state changed: User logged in', user.uid);
+
+				// Check if user is an admin by checking localStorage first (faster)
+				let isUserAdmin = false;
+
+				try {
+					const authData = JSON.parse(
+						localStorage.getItem('auth') || '{}'
+					);
+					isUserAdmin = authData?.isAdmin === true;
+				} catch (e) {
+					console.error('Error reading auth from localStorage:', e);
+				}
+
+				// If not found in localStorage, check Firestore
+				if (!isUserAdmin) {
+					try {
+						// Get admin document from Firestore
+						const settingsDocRef = doc(db, 'settings', 'admins');
+						const settingsDoc = await getDoc(settingsDocRef);
+
+						if (settingsDoc.exists()) {
+							const data = settingsDoc.data();
+							const adminIds = data.adminIds || [];
+							isUserAdmin = adminIds.includes(user.uid);
+							console.log(
+								'Admin status from Firestore:',
+								isUserAdmin
+							);
+						}
+					} catch (error) {
+						console.error('Error checking admin status:', error);
+					}
+				} else {
+					console.log('Admin status from localStorage:', isUserAdmin);
+				}
+
 				const userData = {
 					uid: user.uid,
 					email: user.email,
 					displayName:
 						user.displayName || user.email?.split('@')[0] || 'User',
 					photoURL: user.photoURL,
+					isAdmin: isUserAdmin,
 				};
 
-				// Dispatch user to Redux
+				// Dispatch user data with admin status to Redux
 				dispatch(setUser(userData));
 
-				// Also save to localStorage as a backup
-				if (typeof window !== 'undefined') {
-					localStorage.setItem(
-						'auth',
-						JSON.stringify({
-							user: userData,
-							isAuthenticated: true,
-						})
-					);
-					console.log('Saved auth state to localStorage');
-
-					// Clear any redirect flags that might cause loops
-					localStorage.removeItem('redirectStarted');
-				}
+				// Also update localStorage
+				localStorage.setItem(
+					'auth',
+					JSON.stringify({
+						user: userData,
+						isAuthenticated: true,
+						isAdmin: isUserAdmin,
+						timestamp: Date.now(),
+					})
+				);
 			} else {
-				console.log('Auth state changed: No user');
+				// User is signed out
 				dispatch(clearUser());
-
-				if (typeof window !== 'undefined') {
-					localStorage.removeItem('auth');
-					console.log('Cleared auth state from localStorage');
-				}
+				localStorage.removeItem('auth');
 			}
 		});
 
 		// Cleanup
 		return () => unsubscribe();
-	}, [dispatch]);
+	}, [dispatch, isClient]);
 
+	// For server-side rendering, return children directly (no auth check yet)
+	// On client side, we've set up the auth state listeners
 	return children;
 }

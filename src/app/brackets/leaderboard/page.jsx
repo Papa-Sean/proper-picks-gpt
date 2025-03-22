@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import CreateBracketContainer from '@/components/CreateBracketContainer';
@@ -10,16 +10,18 @@ import {
 	collection,
 	query,
 	where,
-	orderBy,
 	getDocs,
+	onSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
+import { processActualResults, updateLeaderboardScores } from '@/utils/scoring';
 
 export default function LeaderboardPage() {
-	const { user } = useAuth();
+	const { user, isAdmin } = useAuth();
 	const [leaderboard, setLeaderboard] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	const [refreshing, setRefreshing] = useState(false);
 	const [tournamentInfo, setTournamentInfo] = useState({
 		name: 'Proper Tournament 2025',
 		currentRound: 1,
@@ -31,49 +33,59 @@ export default function LeaderboardPage() {
 			'Final Four',
 			'Championship',
 		],
+		lastUpdated: null,
 	});
 	const [sortCriteria, setSortCriteria] = useState('points');
 
-	useEffect(() => {
-		const fetchLeaderboard = async () => {
-			try {
+	// Create a reusable fetch function that can be called for manual refresh
+	const fetchLeaderboard = useCallback(async (showRefreshing = false) => {
+		try {
+			if (showRefreshing) {
+				setRefreshing(true);
+			} else {
 				setLoading(true);
+			}
 
-				// First, try to get tournament info
-				const tournamentId = 'ncaa-2025'; // You might want to make this dynamic
-				const tournamentRef = doc(db, 'tournaments', tournamentId);
-				const tournamentDoc = await getDoc(tournamentRef);
+			// First, get tournament info and actual results
+			const tournamentId = 'ncaa-2025';
+			const tournamentRef = doc(db, 'tournaments', tournamentId);
+			const tournamentDoc = await getDoc(tournamentRef);
 
-				if (tournamentDoc.exists()) {
-					const tournamentData = tournamentDoc.data();
-					setTournamentInfo({
-						name: tournamentData.name || 'NCAA Tournament 2024',
-						currentRound: tournamentData.currentRound || 1,
-						roundNames: tournamentData.roundNames || [
-							'First Round',
-							'Second Round',
-							'Sweet 16',
-							'Elite Eight',
-							'Final Four',
-							'Championship',
-						],
-					});
-				}
+			// Get tournament info and current round
+			let currentRound = 1;
+			let actualResults = null;
 
-				// Fetch all brackets for this tournament
+			if (tournamentDoc.exists()) {
+				const tournamentData = tournamentDoc.data();
+				setTournamentInfo({
+					name: tournamentData.name || 'NCAA Tournament 2025',
+					currentRound: tournamentData.currentRound || 1,
+					roundNames: tournamentData.roundNames || [
+						'First Round',
+						'Second Round',
+						'Sweet 16',
+						'Elite Eight',
+						'Final Four',
+						'Championship',
+					],
+					lastUpdated: tournamentData.lastUpdated?.toDate() || null,
+				});
+				currentRound = tournamentData.currentRound || 1;
+
+				// Process actual results for scoring
+				actualResults = processActualResults(tournamentData);
+
+				// Fetch all brackets and apply scoring
 				const bracketsRef = collection(db, 'brackets');
 				const q = query(
 					bracketsRef,
-					where('tournamentId', '==', tournamentId),
-					orderBy('points', 'desc')
+					where('tournamentId', '==', tournamentId)
 				);
 
 				const bracketsSnapshot = await getDocs(q);
-				const brackets = [];
+				let brackets = [];
 
-				if (bracketsSnapshot.empty) {
-					console.log('No brackets found');
-				} else {
+				if (!bracketsSnapshot.empty) {
 					bracketsSnapshot.forEach((doc) => {
 						const data = doc.data();
 						brackets.push({
@@ -81,33 +93,67 @@ export default function LeaderboardPage() {
 							userName: data.userName || 'Anonymous User',
 							bracketName: data.name || 'Unnamed Bracket',
 							bracketId: doc.id,
+							tournamentId: data.tournamentId || 'unknown',
+							selections: data.selections || {},
+							rounds: data.rounds || {},
 							points: data.points || 0,
 							correctPicks: data.correctPicks || 0,
 							totalPicks: data.totalPicks || 0,
 							maxPossible: data.maxPossible || 192,
 							roundScores: data.roundScores || [0, 0, 0, 0, 0, 0],
 							createdAt: data.createdAt?.toDate() || new Date(),
+							updatedAt: data.updatedAt?.toDate() || null,
 						});
 					});
 
-					console.log(`Fetched ${brackets.length} brackets`);
+					// Calculate scores for all brackets
+					if (actualResults) {
+						brackets = updateLeaderboardScores(
+							brackets,
+							actualResults,
+							currentRound
+						);
+					}
 				}
 
 				setLeaderboard(brackets);
-				setLoading(false);
-			} catch (err) {
-				console.error('Error fetching leaderboard data:', err);
-				setError(
-					`Failed to load leaderboard: ${
-						err.message || 'Unknown error'
-					}`
-				);
-				setLoading(false);
 			}
-		};
-
-		fetchLeaderboard();
+		} catch (err) {
+			console.error('Error fetching leaderboard data:', err);
+			setError(
+				`Failed to load leaderboard: ${err.message || 'Unknown error'}`
+			);
+		} finally {
+			setLoading(false);
+			setRefreshing(false);
+		}
 	}, []);
+
+	// Initial load
+	useEffect(() => {
+		fetchLeaderboard();
+
+		// Optional: Set up a listener for tournament updates
+		const tournamentRef = doc(db, 'tournaments', 'ncaa-2025');
+		const unsubscribe = onSnapshot(
+			tournamentRef,
+			(doc) => {
+				if (doc.exists() && doc.data().lastUpdated) {
+					// Only refresh if the tournament was updated
+					fetchLeaderboard(true);
+				}
+			},
+			(error) => {
+				console.error('Error listening to tournament updates:', error);
+			}
+		);
+
+		return () => unsubscribe();
+	}, [fetchLeaderboard]);
+
+	const handleRefresh = () => {
+		fetchLeaderboard(true);
+	};
 
 	const sortedLeaderboard = [...leaderboard].sort((a, b) => {
 		if (sortCriteria === 'points') {
@@ -119,10 +165,6 @@ export default function LeaderboardPage() {
 		}
 		return 0;
 	});
-
-	const handleSortChange = (criteria) => {
-		setSortCriteria(criteria);
-	};
 
 	if (loading) {
 		return (
@@ -195,24 +237,78 @@ export default function LeaderboardPage() {
 
 	return (
 		<CreateBracketContainer title={`${tournamentInfo.name} Leaderboard`}>
-			<div className='mb-6'>
-				<h2 className='text-xl font-bold mb-2'>
-					Current Round:{' '}
-					{tournamentInfo.roundNames[tournamentInfo.currentRound - 1]}
-				</h2>
-				<div className='flex flex-wrap gap-2'>
-					{tournamentInfo.roundNames.map((name, index) => (
-						<div
-							key={index}
-							className={`badge ${
-								index < tournamentInfo.currentRound
-									? 'badge-primary'
-									: 'badge-outline'
-							}`}
-						>
-							{name}
+			<div className='mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
+				<div>
+					<h2 className='text-xl font-bold mb-2'>
+						Current Round:{' '}
+						{
+							tournamentInfo.roundNames[
+								tournamentInfo.currentRound - 1
+							]
+						}
+					</h2>
+					<div className='flex flex-wrap gap-2 mb-2'>
+						{tournamentInfo.roundNames.map((name, index) => (
+							<div
+								key={index}
+								className={`badge ${
+									index < tournamentInfo.currentRound
+										? 'badge-primary'
+										: 'badge-outline'
+								}`}
+							>
+								{name}
+							</div>
+						))}
+					</div>
+					{tournamentInfo.lastUpdated && (
+						<div className='text-sm opacity-70'>
+							Last updated:{' '}
+							{tournamentInfo.lastUpdated.toLocaleString()}
 						</div>
-					))}
+					)}
+				</div>
+
+				<div className='flex gap-2'>
+					<button
+						className='btn btn-outline btn-sm'
+						onClick={handleRefresh}
+						disabled={refreshing}
+					>
+						{refreshing ? (
+							<>
+								<span className='loading loading-spinner loading-xs mr-1'></span>
+								Refreshing...
+							</>
+						) : (
+							<>
+								<svg
+									xmlns='http://www.w3.org/2000/svg'
+									className='h-4 w-4 mr-1'
+									fill='none'
+									viewBox='0 0 24 24'
+									stroke='currentColor'
+								>
+									<path
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										strokeWidth={2}
+										d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+									/>
+								</svg>
+								Refresh
+							</>
+						)}
+					</button>
+
+					{isAdmin && (
+						<Link
+							href='/admin/tournament'
+							className='btn btn-primary btn-sm'
+						>
+							Update Results
+						</Link>
+					)}
 				</div>
 			</div>
 
@@ -260,59 +356,72 @@ export default function LeaderboardPage() {
 						</tr>
 					</thead>
 					<tbody>
-						{sortedLeaderboard.map((entry, index) => (
-							<tr
-								key={entry.bracketId}
-								className={
-									user && entry.userId === user.uid
-										? 'bg-primary bg-opacity-10'
-										: ''
-								}
-							>
-								<td className='font-bold'>{index + 1}</td>
-								<td>
-									<div>
-										<div className='font-bold'>
-											{entry.bracketName}
+						{sortedLeaderboard.map((entry, index) => {
+							// Check if this bracket was updated recently (within the last hour)
+							const recentlyUpdated =
+								entry.updatedAt &&
+								new Date().getTime() -
+									entry.updatedAt.getTime() <
+									60 * 60 * 1000;
+
+							return (
+								<tr
+									key={entry.bracketId}
+									className={`
+								  ${user && entry.userId === user.uid ? 'bg-primary bg-opacity-10' : ''}
+								  ${recentlyUpdated ? 'bg-success bg-opacity-5' : ''}
+								`}
+								>
+									<td className='font-bold'>{index + 1}</td>
+									<td>
+										<div>
+											<div className='font-bold flex items-center'>
+												{entry.bracketName}
+												{recentlyUpdated && (
+													<div className='badge badge-xs badge-success ml-2'>
+														Updated
+													</div>
+												)}
+											</div>
+											<div className='text-sm opacity-70'>
+												{entry.userName}
+											</div>
+											<div className='text-xs opacity-50'>
+												Created:{' '}
+												{entry.createdAt.toLocaleDateString()}
+											</div>
 										</div>
-										<div className='text-sm opacity-70'>
-											{entry.userName}
+									</td>
+									<td className='text-center font-bold'>
+										{entry.points}
+									</td>
+									<td className='text-center'>
+										{entry.correctPicks}/
+										{entry.totalPicks || '-'}
+										<div className='text-xs opacity-70'>
+											{entry.totalPicks
+												? `${Math.round(
+														(entry.correctPicks /
+															entry.totalPicks) *
+															100
+												  )}%`
+												: '-'}
 										</div>
-										<div className='text-xs opacity-50'>
-											Created:{' '}
-											{entry.createdAt.toLocaleDateString()}
-										</div>
-									</div>
-								</td>
-								<td className='text-center font-bold'>
-									{entry.points}
-								</td>
-								<td className='text-center'>
-									{entry.correctPicks}/
-									{entry.totalPicks || '-'}
-									<div className='text-xs opacity-70'>
-										{entry.totalPicks
-											? `${Math.round(
-													(entry.correctPicks /
-														entry.totalPicks) *
-														100
-											  )}%`
-											: '-'}
-									</div>
-								</td>
-								<td className='text-center'>
-									{entry.maxPossible}
-								</td>
-								<td className='text-right'>
-									<Link
-										href={`/brackets/view/${entry.bracketId}`}
-										className='btn btn-sm btn-outline'
-									>
-										View Bracket
-									</Link>
-								</td>
-							</tr>
-						))}
+									</td>
+									<td className='text-center'>
+										{entry.maxPossible}
+									</td>
+									<td className='text-right'>
+										<Link
+											href={`/brackets/view/${entry.bracketId}`}
+											className='btn btn-sm btn-outline'
+										>
+											View Bracket
+										</Link>
+									</td>
+								</tr>
+							);
+						})}
 					</tbody>
 				</table>
 			</div>

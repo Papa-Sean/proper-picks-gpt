@@ -3,13 +3,13 @@ import { createSlice } from '@reduxjs/toolkit';
 // Load initial state from localStorage if available
 const loadAuthState = () => {
 	if (typeof window === 'undefined') {
-		return { user: null, isAuthenticated: false };
+		return { user: null, isAuthenticated: false, isAdmin: false };
 	}
 
 	try {
 		const serializedAuth = localStorage.getItem('auth');
 		if (serializedAuth === null) {
-			return { user: null, isAuthenticated: false };
+			return { user: null, isAuthenticated: false, isAdmin: false };
 		}
 
 		// Add timestamp validation - reject auth data older than 24 hours
@@ -21,15 +21,20 @@ const loadAuthState = () => {
 		) {
 			console.log('Auth data expired or invalid, clearing');
 			localStorage.removeItem('auth');
-			return { user: null, isAuthenticated: false };
+			return { user: null, isAuthenticated: false, isAdmin: false };
 		}
 
 		console.log('Loaded auth state from localStorage:', parsedAuth);
-		return parsedAuth;
+
+		// Make sure isAdmin is set from the user object if it exists
+		return {
+			...parsedAuth,
+			isAdmin: parsedAuth.user?.isAdmin || false,
+		};
 	} catch (err) {
 		console.error('Error loading auth state:', err);
 		localStorage.removeItem('auth');
-		return { user: null, isAuthenticated: false };
+		return { user: null, isAuthenticated: false, isAdmin: false };
 	}
 };
 
@@ -57,6 +62,7 @@ export const authSlice = createSlice({
 		setUser: (state, action) => {
 			state.user = action.payload;
 			state.isAuthenticated = true;
+			state.isAdmin = action.payload?.isAdmin || false;
 
 			// Save to localStorage on the client side with timestamp
 			if (typeof window !== 'undefined') {
@@ -71,6 +77,7 @@ export const authSlice = createSlice({
 		clearUser: (state) => {
 			state.user = null;
 			state.isAuthenticated = false;
+			state.isAdmin = false;
 
 			// Clear from localStorage on the client side
 			if (typeof window !== 'undefined') {

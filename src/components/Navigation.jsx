@@ -11,7 +11,7 @@ export default function Navigation() {
 	const pathname = usePathname();
 	const router = useRouter();
 	const { user, logout } = useAuth();
-	const { isAuthenticated } = useSelector((state) => state.auth);
+	const { isAuthenticated, isAdmin } = useSelector((state) => state.auth);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	// Important: Use this to defer client-side rendering until after hydration
@@ -190,6 +190,26 @@ export default function Navigation() {
 												My Brackets
 											</Link>
 										</li>
+										{isAdmin && (
+											<>
+												<li>
+													<Link
+														href='/admin'
+														className='font-medium'
+													>
+														Admin Dashboard
+													</Link>
+												</li>
+												<li>
+													<Link
+														href='/admin/tournament'
+														className='font-medium'
+													>
+														Tournament Admin
+													</Link>
+												</li>
+											</>
+										)}
 										<li>
 											<button
 												onClick={handleSignOut}
@@ -320,6 +340,26 @@ export default function Navigation() {
 												My Brackets
 											</Link>
 										</li>
+										{isAdmin && (
+											<>
+												<li>
+													<Link
+														href='/admin'
+														className='font-medium'
+													>
+														Admin Dashboard
+													</Link>
+												</li>
+												<li>
+													<Link
+														href='/admin/tournament'
+														className='font-medium'
+													>
+														Tournament Admin
+													</Link>
+												</li>
+											</>
+										)}
 									</>
 								)}
 								<li>
