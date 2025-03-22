@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,6 +16,7 @@ export default function BracketViewPage() {
 	const [bracket, setBracket] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	const [tournamentData, setTournamentData] = useState(null);
 
 	useEffect(() => {
 		async function loadBracket() {
@@ -52,6 +53,45 @@ export default function BracketViewPage() {
 
 		loadBracket();
 	}, [searchParams]);
+
+	// Fetch tournament data for actual results
+	useEffect(() => {
+		const fetchTournamentData = async () => {
+			const tournamentRef = doc(db, 'tournaments', 'ncaa-2025');
+			const tournamentDoc = await getDoc(tournamentRef);
+
+			if (tournamentDoc.exists()) {
+				setTournamentData(tournamentDoc.data());
+			}
+		};
+
+		fetchTournamentData();
+	}, []);
+
+	// Process actual results from tournament data
+	const processActualResults = (tournamentData) => {
+		if (!tournamentData?.rounds) return {};
+
+		const results = {};
+
+		Object.entries(tournamentData.rounds).forEach(([roundNum, games]) => {
+			const round = parseInt(roundNum);
+			results[round] = {};
+
+			games.forEach((game) => {
+				if (game.gameId && game.actualWinner) {
+					results[round][game.gameId] = game.actualWinner;
+				}
+			});
+		});
+
+		return results;
+	};
+
+	// Process actual results when tournament data is loaded
+	const actualResults = useMemo(() => {
+		return tournamentData ? processActualResults(tournamentData) : {};
+	}, [tournamentData]);
 
 	// Same rendering logic as before...
 	if (loading) {
@@ -129,6 +169,7 @@ export default function BracketViewPage() {
 				}
 				teams={bracket.teams || []}
 				bracketSelections={bracket.selections || {}}
+				actualResults={actualResults}
 				isReadOnly={true}
 			/>
 		</CreateBracketContainer>

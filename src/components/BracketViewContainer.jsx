@@ -16,6 +16,7 @@ export default function BracketViewContainer({
 	games = [],
 	teams = [],
 	bracketSelections = {},
+	actualResults = {},
 	onGameClick,
 	isReadOnly = true,
 }) {
@@ -128,13 +129,42 @@ export default function BracketViewContainer({
 		}
 	};
 
+	// Add this after your other helper functions
+	const getGameResultStatus = (gameId, round, userSelection) => {
+		// If no actual result or user didn't make a selection, return null
+		if (!actualResults[round]?.[gameId] || !userSelection) {
+			return null;
+		}
+
+		// Compare user selection with actual result
+		const actualWinner = actualResults[round][gameId];
+
+		if (userSelection === actualWinner) {
+			return 'correct'; // Correct pick
+		} else {
+			return 'incorrect'; // Incorrect pick
+		}
+	};
+
+	// Add this after your helper functions
+	const getPointsForRound = (round) => {
+		const pointsPerRound = [1, 2, 4, 8, 16, 32]; // Points for rounds 1-6
+		return pointsPerRound[round - 1] || 0;
+	};
+
 	// Render a single game matchup
+	// Modify the existing renderGame function
 	const renderGame = (game, round, region) => {
 		if (!game) return <div className='h-16 opacity-0'></div>;
 
 		const teamADetails = getTeamDetails(game.teamA);
 		const teamBDetails = getTeamDetails(game.teamB);
-		const winner = getGameWinner(game.gameId, round);
+		const userSelection = getGameWinner(game.gameId, round);
+		const resultStatus = getGameResultStatus(
+			game.gameId,
+			round,
+			userSelection
+		);
 		const isDisabled = isGameDisabled(game);
 
 		// For placeholder games that don't have teams yet
@@ -142,10 +172,10 @@ export default function BracketViewContainer({
 			return (
 				<div
 					className={`
-          relative border border-gray-200 rounded p-1 h-16 flex flex-col justify-center
-          ${isReadOnly ? 'opacity-50' : 'opacity-80'} 
-          ${getRegionStyle(region)}
-        `}
+		  relative border border-gray-200 rounded p-1 h-16 flex flex-col justify-center
+		  ${isReadOnly ? 'opacity-50' : 'opacity-80'} 
+		  ${getRegionStyle(region)}
+		`}
 				>
 					<div className='text-[10px] text-center text-gray-500'>
 						Game {game.gameId}
@@ -157,18 +187,26 @@ export default function BracketViewContainer({
 			);
 		}
 
+		// Set border color based on result status
+		let resultStatusClasses = '';
+		if (resultStatus === 'correct') {
+			resultStatusClasses = 'border-success bg-success/10';
+		} else if (resultStatus === 'incorrect') {
+			resultStatusClasses = 'border-warning bg-warning/10';
+		} else if (userSelection) {
+			resultStatusClasses = 'border-primary bg-primary/10';
+		} else {
+			resultStatusClasses = 'border-gray-200';
+		}
+
 		return (
 			<div
 				className={`
-          relative border rounded p-1 mb-1 cursor-pointer h-16 flex flex-col justify-between
-          ${isReadOnly ? '' : 'hover:shadow-md transition-shadow'} 
-          ${
-				winner === game.teamA
-					? 'border-primary bg-primary/10'
-					: 'border-gray-200'
-			}
-          ${getRegionStyle(region)}
-        `}
+		relative border rounded p-1 mb-1 cursor-pointer h-16 flex flex-col justify-between
+		${isReadOnly ? '' : 'hover:shadow-md transition-shadow'} 
+		${resultStatusClasses}
+		${getRegionStyle(region)}
+	  `}
 				onClick={() =>
 					onGameClick && onGameClick(game.gameId, round, region)
 				}
@@ -176,8 +214,12 @@ export default function BracketViewContainer({
 				<div className='flex justify-between items-center border-b pb-1'>
 					<div
 						className={`flex items-center text-xs ${
-							winner === game.teamA
-								? 'font-bold text-primary'
+							userSelection === game.teamA
+								? resultStatus === 'correct'
+									? 'font-bold text-success'
+									: resultStatus === 'incorrect'
+									? 'font-bold text-warning line-through'
+									: 'font-bold text-primary'
 								: ''
 						}`}
 					>
@@ -190,13 +232,22 @@ export default function BracketViewContainer({
 							{game.teamA}
 						</span>
 					</div>
+
+					{/* Show actual winner indicator */}
+					{actualResults[round]?.[game.gameId] === game.teamA && (
+						<span className='badge badge-xs badge-success'>✓</span>
+					)}
 				</div>
 
 				<div className='flex justify-between items-center pt-1'>
 					<div
 						className={`flex items-center text-xs ${
-							winner === game.teamB
-								? 'font-bold text-primary'
+							userSelection === game.teamB
+								? resultStatus === 'correct'
+									? 'font-bold text-success'
+									: resultStatus === 'incorrect'
+									? 'font-bold text-warning line-through'
+									: 'font-bold text-primary'
 								: ''
 						}`}
 					>
@@ -209,6 +260,11 @@ export default function BracketViewContainer({
 							{game.teamB}
 						</span>
 					</div>
+
+					{/* Show actual winner indicator */}
+					{actualResults[round]?.[game.gameId] === game.teamB && (
+						<span className='badge badge-xs badge-success'>✓</span>
+					)}
 				</div>
 
 				<div className='absolute -top-1 -right-1'>
@@ -216,6 +272,15 @@ export default function BracketViewContainer({
 						{game.gameId}
 					</span>
 				</div>
+
+				{/* Show points earned for correct pick */}
+				{resultStatus === 'correct' && (
+					<div className='absolute -bottom-1 -right-1'>
+						<span className='badge badge-xs badge-success'>
+							+{getPointsForRound(round)}
+						</span>
+					</div>
+				)}
 			</div>
 		);
 	};
@@ -627,6 +692,19 @@ export default function BracketViewContainer({
 					<div className='flex items-center'>
 						<div className='w-3 h-3 border-l-4 border-yellow-500 mr-2'></div>
 						<span>Midwest Region</span>
+					</div>
+					{/* Scoring legend */}
+					<div className='flex items-center ml-6'>
+						<div className='w-3 h-3 bg-success/20 border border-success mr-2'></div>
+						<span>Correct Pick</span>
+					</div>
+					<div className='flex items-center'>
+						<div className='w-3 h-3 bg-warning/20 border border-warning mr-2'></div>
+						<span>Incorrect Pick</span>
+					</div>
+					<div className='flex items-center'>
+						<div className='w-3 h-3 bg-primary/20 border border-primary mr-2'></div>
+						<span>Your Selection</span>
 					</div>
 				</div>
 			</div>
