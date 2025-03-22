@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import CreateBracketContainer from '@/components/CreateBracketContainer';
 import {
@@ -15,6 +14,15 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import { processActualResults, updateLeaderboardScores } from '@/utils/scoring';
+
+// Import new components
+import TournamentStatusHeader from '@/components/leaderboard/TournamentStatusHeader';
+import LeaderboardControls from '@/components/leaderboard/LeaderboardControls';
+import LeaderboardTable from '@/components/leaderboard/LeaderboardTable';
+import RoundBreakdownTable from '@/components/leaderboard/RoundBreakdownTable';
+import ScoringSystemCard from '@/components/leaderboard/ScoringSystemCard';
+import EmptyLeaderboard from '@/components/leaderboard/EmptyLeaderboard';
+import LoadingLeaderboard from '@/components/leaderboard/LoadingLeaderboard';
 
 export default function LeaderboardPage() {
 	const { user, isAdmin } = useAuth();
@@ -36,6 +44,12 @@ export default function LeaderboardPage() {
 		lastUpdated: null,
 	});
 	const [sortCriteria, setSortCriteria] = useState('points');
+
+	// Add these new state variables at the top of the LeaderboardPage component
+	const [comparisonBracketId, setComparisonBracketId] = useState('actual');
+	const [comparisonData, setComparisonData] = useState(null);
+	const [isComparingBrackets, setIsComparingBrackets] = useState(false);
+	const [isLoadingComparison, setIsLoadingComparison] = useState(false);
 
 	// Create a reusable fetch function that can be called for manual refresh
 	const fetchLeaderboard = useCallback(async (showRefreshing = false) => {
@@ -129,6 +143,131 @@ export default function LeaderboardPage() {
 		}
 	}, []);
 
+	// Add this function to fetch a bracket for comparison
+	const fetchBracketForComparison = useCallback(async (bracketId) => {
+		if (bracketId === 'actual') {
+			setComparisonData(null);
+			setIsComparingBrackets(false);
+			fetchLeaderboard(true); // Refresh with actual results
+			return;
+		}
+
+		try {
+			setIsLoadingComparison(true);
+
+			// Get the bracket to use as "correct" answers
+			const bracketRef = doc(db, 'brackets', bracketId);
+			const bracketDoc = await getDoc(bracketRef);
+
+			if (!bracketDoc.exists()) {
+				console.error('Comparison bracket not found');
+				setComparisonBracketId('actual');
+				setComparisonData(null);
+				setIsComparingBrackets(false);
+				return;
+			}
+
+			const bracketData = bracketDoc.data();
+
+			// Transform selections into the format of actualResults
+			const transformedSelections = {
+				games: {},
+				1: {},
+				2: {},
+				3: {},
+				4: {},
+				5: {},
+				6: {},
+			};
+
+			// Process each round of selections
+			Object.entries(bracketData.selections || {}).forEach(
+				([round, games]) => {
+					const roundNum = parseInt(round);
+					transformedSelections[roundNum] = {};
+
+					// Process each game selection
+					Object.entries(games).forEach(([gameId, winner]) => {
+						if (winner) {
+							transformedSelections[roundNum][gameId] = winner;
+
+							// Also add to games object for compatibility with scoring functions
+							transformedSelections.games[gameId] = {
+								gameId: parseInt(gameId),
+								round: roundNum,
+								winner: winner,
+							};
+						}
+					});
+				}
+			);
+
+			// Set comparison data and recalculate leaderboard
+			setComparisonData({
+				results: transformedSelections,
+				bracketName: bracketData.name,
+				userName: bracketData.userName,
+			});
+			setIsComparingBrackets(true);
+
+			// Get all brackets again
+			const tournamentId = 'ncaa-2025';
+			const bracketsRef = collection(db, 'brackets');
+			const q = query(
+				bracketsRef,
+				where('tournamentId', '==', tournamentId)
+			);
+
+			const bracketsSnapshot = await getDocs(q);
+			let brackets = [];
+
+			if (!bracketsSnapshot.empty) {
+				bracketsSnapshot.forEach((doc) => {
+					const data = doc.data();
+					brackets.push({
+						userId: data.userId,
+						userName: data.userName || 'Anonymous User',
+						bracketName: data.name || 'Unnamed Bracket',
+						bracketId: doc.id,
+						tournamentId: data.tournamentId || 'unknown',
+						selections: data.selections || {},
+						rounds: data.rounds || {},
+						points: data.points || 0,
+						correctPicks: data.correctPicks || 0,
+						totalPicks: data.totalPicks || 0,
+						maxPossible: data.maxPossible || 192,
+						roundScores: data.roundScores || [0, 0, 0, 0, 0, 0],
+						createdAt: data.createdAt?.toDate() || new Date(),
+						updatedAt: data.updatedAt?.toDate() || null,
+					});
+				});
+
+				// Score all brackets using the comparison bracket as "actual results"
+				brackets = updateLeaderboardScores(
+					brackets,
+					transformedSelections,
+					6 // Use all rounds for comparison
+				);
+
+				setLeaderboard(brackets);
+			}
+		} catch (err) {
+			console.error('Error fetching bracket for comparison:', err);
+			setComparisonBracketId('actual');
+			setComparisonData(null);
+			setIsComparingBrackets(false);
+		} finally {
+			setIsLoadingComparison(false);
+		}
+	}, []);
+
+	// Add an effect to update when the comparison bracket changes
+	useEffect(() => {
+		if (comparisonBracketId) {
+			fetchBracketForComparison(comparisonBracketId);
+		}
+	}, [comparisonBracketId, fetchBracketForComparison]);
+
 	// Initial load
 	useEffect(() => {
 		fetchLeaderboard();
@@ -155,6 +294,10 @@ export default function LeaderboardPage() {
 		fetchLeaderboard(true);
 	};
 
+	const handleSortChange = (criteria) => {
+		setSortCriteria(criteria);
+	};
+
 	const sortedLeaderboard = [...leaderboard].sort((a, b) => {
 		if (sortCriteria === 'points') {
 			return b.points - a.points;
@@ -169,9 +312,7 @@ export default function LeaderboardPage() {
 	if (loading) {
 		return (
 			<CreateBracketContainer title='Loading Leaderboard...'>
-				<div className='flex justify-center p-12'>
-					<div className='loading loading-spinner loading-lg'></div>
-				</div>
+				<LoadingLeaderboard />
 			</CreateBracketContainer>
 		);
 	}
@@ -205,318 +346,88 @@ export default function LeaderboardPage() {
 			<CreateBracketContainer
 				title={`${tournamentInfo.name} Leaderboard`}
 			>
-				<div className='alert alert-info'>
-					<svg
-						xmlns='http://www.w3.org/2000/svg'
-						fill='none'
-						viewBox='0 0 24 24'
-						className='stroke-current shrink-0 w-6 h-6'
-					>
-						<path
-							strokeLinecap='round'
-							strokeLinejoin='round'
-							strokeWidth='2'
-							d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-						></path>
-					</svg>
-					<span>
-						No brackets have been submitted yet for this tournament.
-					</span>
-				</div>
-				<div className='mt-4 text-center'>
-					<Link
-						href='/brackets/create'
-						className='btn btn-secondary'
-					>
-						Create a Bracket
-					</Link>
-				</div>
+				<EmptyLeaderboard />
 			</CreateBracketContainer>
 		);
 	}
 
 	return (
 		<CreateBracketContainer title={`${tournamentInfo.name} Leaderboard`}>
-			<div className='mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
-				<div>
-					<h2 className='text-xl font-bold mb-2'>
-						Current Round:{' '}
-						{
-							tournamentInfo.roundNames[
-								tournamentInfo.currentRound - 1
-							]
-						}
-					</h2>
-					<div className='flex flex-wrap gap-2 mb-2'>
-						{tournamentInfo.roundNames.map((name, index) => (
-							<div
-								key={index}
-								className={`badge ${
-									index < tournamentInfo.currentRound
-										? 'badge-secondary'
-										: 'badge-outline'
-								}`}
-							>
-								{name}
-							</div>
-						))}
-					</div>
-					{tournamentInfo.lastUpdated && (
-						<div className='text-sm opacity-70'>
-							Last updated:{' '}
-							{tournamentInfo.lastUpdated.toLocaleString()}
-						</div>
-					)}
+			<div className='space-y-6'>
+				{/* Header section with tournament info and controls */}
+				<div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
+					<TournamentStatusHeader
+						tournamentInfo={tournamentInfo}
+						isComparingBrackets={isComparingBrackets}
+						comparisonData={comparisonData}
+					/>
+
+					<LeaderboardControls
+						onRefresh={handleRefresh}
+						isRefreshing={refreshing || isLoadingComparison}
+						isAdmin={isAdmin}
+						sortCriteria={sortCriteria}
+						onSortChange={handleSortChange}
+						comparisonBracketId={comparisonBracketId}
+						onComparisonChange={setComparisonBracketId}
+						brackets={leaderboard}
+						isLoadingBrackets={loading || isLoadingComparison}
+					/>
 				</div>
 
-				<div className='flex gap-2'>
-					<button
-						className='btn btn-outline btn-sm'
-						onClick={handleRefresh}
-						disabled={refreshing}
-					>
-						{refreshing ? (
-							<>
-								<span className='loading loading-spinner loading-xs mr-1'></span>
-								Refreshing...
-							</>
-						) : (
-							<>
-								<svg
-									xmlns='http://www.w3.org/2000/svg'
-									className='h-4 w-4 mr-1'
-									fill='none'
-									viewBox='0 0 24 24'
-									stroke='currentColor'
-								>
-									<path
-										strokeLinecap='round'
-										strokeLinejoin='round'
-										strokeWidth={2}
-										d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
-									/>
-								</svg>
-								Refresh
-							</>
-						)}
-					</button>
-
-					{isAdmin && (
-						<Link
-							href='/admin/tournament'
-							className='btn btn-secondary btn-sm'
+				{/* Add this right before the LeaderboardTable component in your return statement */}
+				{isComparingBrackets && comparisonData && (
+					<div className='alert alert-warning'>
+						<svg
+							xmlns='http://www.w3.org/2000/svg'
+							className='stroke-current shrink-0 h-6 w-6'
+							fill='none'
+							viewBox='0 0 24 24'
 						>
-							Update Results
-						</Link>
-					)}
-				</div>
-			</div>
-
-			{/* Sorting controls */}
-			<div className='flex justify-end mb-4'>
-				<div className='btn-group'>
-					<button
-						className={`btn btn-sm ${
-							sortCriteria === 'points' ? 'btn-active' : ''
-						}`}
-						onClick={() => handleSortChange('points')}
-					>
-						Points
-					</button>
-					<button
-						className={`btn btn-sm ${
-							sortCriteria === 'correctPicks' ? 'btn-active' : ''
-						}`}
-						onClick={() => handleSortChange('correctPicks')}
-					>
-						Correct Picks
-					</button>
-					<button
-						className={`btn btn-sm ${
-							sortCriteria === 'maxPossible' ? 'btn-active' : ''
-						}`}
-						onClick={() => handleSortChange('maxPossible')}
-					>
-						Max Possible
-					</button>
-				</div>
-			</div>
-
-			{/* Leaderboard table */}
-			<div className='overflow-x-auto'>
-				<table className='table w-full'>
-					<thead>
-						<tr>
-							<th>Rank</th>
-							<th>Bracket</th>
-							<th className='text-center'>Points</th>
-							<th className='text-center'>Correct Picks</th>
-							<th className='text-center'>Max Possible</th>
-							<th className='text-right'>Actions</th>
-						</tr>
-					</thead>
-					<tbody>
-						{sortedLeaderboard.map((entry, index) => {
-							// Check if this bracket was updated recently (within the last hour)
-							const recentlyUpdated =
-								entry.updatedAt &&
-								new Date().getTime() -
-									entry.updatedAt.getTime() <
-									60 * 60 * 1000;
-
-							return (
-								<tr
-									key={entry.bracketId}
-									className={`
-								  ${user && entry.userId === user.uid ? 'bg-secondary bg-opacity-10' : ''}
-								  ${recentlyUpdated ? 'bg-success bg-opacity-5' : ''}
-								`}
-								>
-									<td className='font-bold'>{index + 1}</td>
-									<td>
-										<div>
-											<div className='font-bold flex items-center'>
-												{entry.bracketName}
-												{recentlyUpdated && (
-													<div className='badge badge-xs badge-success ml-2'>
-														Updated
-													</div>
-												)}
-											</div>
-											<div className='text-sm opacity-70'>
-												{entry.userName}
-											</div>
-											<div className='text-xs opacity-50'>
-												Created:{' '}
-												{entry.createdAt.toLocaleDateString()}
-											</div>
-										</div>
-									</td>
-									<td className='text-center font-bold'>
-										{entry.points}
-									</td>
-									<td className='text-center'>
-										{entry.correctPicks}/
-										{entry.totalPicks || '-'}
-										<div className='text-xs opacity-70'>
-											{entry.totalPicks
-												? `${Math.round(
-														(entry.correctPicks /
-															entry.totalPicks) *
-															100
-												  )}%`
-												: '-'}
-										</div>
-									</td>
-									<td className='text-center'>
-										{entry.maxPossible}
-									</td>
-									<td className='text-right'>
-										<Link
-											href={`/brackets/view/bracketview?id=${entry.bracketId}`}
-											className={`btn btn-sm ${
-												user &&
-												entry.userId === user.uid
-													? 'btn-ghost text-secondary font-extabold border-secondary'
-													: 'btn-outline'
-											}`}
-										>
-											{user && entry.userId === user.uid
-												? 'Your Bracket'
-												: 'View Bracket'}
-										</Link>
-									</td>
-								</tr>
-							);
-						})}
-					</tbody>
-				</table>
-			</div>
-
-			{/* Round breakdown */}
-			<div className='mt-8'>
-				<h3 className='text-lg font-bold mb-4'>
-					Round-by-Round Breakdown
-				</h3>
-				<div className='overflow-x-auto'>
-					<table className='table w-full'>
-						<thead>
-							<tr>
-								<th>Bracket</th>
-								{tournamentInfo.roundNames.map(
-									(name, index) => (
-										<th
-											key={index}
-											className='text-center'
-										>
-											{name}
-										</th>
-									)
-								)}
-							</tr>
-						</thead>
-						<tbody>
-							{sortedLeaderboard.map((entry) => (
-								<tr
-									key={`${entry.bracketId}-rounds`}
-									className={
-										user && entry.userId === user.uid
-											? 'bg-secondary bg-opacity-10'
-											: ''
+							<path
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								strokeWidth='2'
+								d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+							/>
+						</svg>
+						<div>
+							<h3 className='font-bold'>
+								Bracket Comparison Mode
+							</h3>
+							<div className='text-sm'>
+								Showing how the leaderboard would look if "
+								{comparisonData.bracketName}" by{' '}
+								{comparisonData.userName} had all the correct
+								picks.
+								<button
+									onClick={() =>
+										setComparisonBracketId('actual')
 									}
+									className='btn btn-xs btn-outline mt-1'
 								>
-									<td>
-										<div className='font-bold'>
-											{entry.bracketName}
-										</div>
-										<div className='text-sm opacity-70'>
-											{entry.userName}
-										</div>
-									</td>
-									{entry.roundScores.map((score, index) => (
-										<td
-											key={index}
-											className='text-center'
-										>
-											{score}
-											{index <
-												tournamentInfo.currentRound && (
-												<div
-													className='radial-progress text-xs'
-													style={{
-														'--value': Math.min(
-															100,
-															score
-														),
-														'--size': '1.5rem',
-													}}
-												>
-													{score}
-												</div>
-											)}
-										</td>
-									))}
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			</div>
+									Return to Actual Results
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
 
-			{/* Scoring explanation */}
-			<div className='mt-10 p-4 bg-base-200 rounded-lg'>
-				<h3 className='text-lg font-bold mb-2'>Scoring System</h3>
-				<ul className='list-disc list-inside space-y-1'>
-					<li>First Round: 1 point per correct pick</li>
-					<li>Second Round: 2 points per correct pick</li>
-					<li>Sweet 16: 4 points per correct pick</li>
-					<li>Elite 8: 8 points per correct pick</li>
-					<li>Final Four: 16 points per correct pick</li>
-					<li>Championship: 32 points for picking the winner</li>
-				</ul>
-				<p className='mt-2 text-sm opacity-70'>
-					Maximum possible score: 192 points
-				</p>
+				{/* Main leaderboard table */}
+				<LeaderboardTable
+					leaderboard={sortedLeaderboard}
+					user={user}
+				/>
+
+				{/* Round-by-round breakdown */}
+				<RoundBreakdownTable
+					leaderboard={sortedLeaderboard}
+					tournamentInfo={tournamentInfo}
+					user={user}
+				/>
+
+				{/* Scoring explanation */}
+				<ScoringSystemCard />
 			</div>
 		</CreateBracketContainer>
 	);

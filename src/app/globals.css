@@ -1,7 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+@theme {
+	--breakpoint-xs: 480px;
+}
 /* Add these animations to your globals.css file */
 @keyframes twinkle {
 	0%,

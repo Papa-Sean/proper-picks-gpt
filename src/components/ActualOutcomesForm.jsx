@@ -17,6 +17,7 @@ import {
 import { db } from '@/config/firebase';
 import dummyTeams from '@/dummyTeams';
 import { updateLeaderboardScores, processActualResults } from '@/utils/scoring';
+import BracketComparisonSelector from './BracketComparisonSelector';
 
 /**
  * ActualOutcomesForm - A component for tournament administrators to record
@@ -36,6 +37,11 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 	const [isBatchUpdating, setIsBatchUpdating] = useState(false);
 	const [batchUpdateStats, setBatchUpdateStats] = useState(null);
 	const [isClient, setIsClient] = useState(false);
+	const [comparisonBracketId, setComparisonBracketId] = useState('actual');
+	const [comparisonBracketName, setComparisonBracketName] =
+		useState('Actual Results');
+	const [comparisonResults, setComparisonResults] = useState({});
+	const [isComparingBrackets, setIsComparingBrackets] = useState(false);
 
 	// Round information
 	const roundInfo = [
@@ -632,6 +638,74 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 		setIsClient(true);
 	}, []);
 
+	// Add this new function to fetch and process a user's bracket selections
+	const fetchBracketForComparison = async (bracketId) => {
+		if (bracketId === 'actual') {
+			// Reset to actual results
+			setComparisonResults(actualResults || {});
+			setComparisonBracketName('Actual Results');
+			setIsComparingBrackets(false);
+			return;
+		}
+
+		try {
+			const bracketRef = doc(db, 'brackets', bracketId);
+			const bracketDoc = await getDoc(bracketRef);
+
+			if (bracketDoc.exists()) {
+				const bracketData = bracketDoc.data();
+
+				// Transform selections into the format of actualResults
+				const transformedSelections = {};
+
+				// Process each round of selections
+				Object.entries(bracketData.selections || {}).forEach(
+					([round, games]) => {
+						const roundNum = parseInt(round);
+						transformedSelections[roundNum] = {};
+
+						// Process each game selection
+						Object.entries(games).forEach(([gameId, winner]) => {
+							transformedSelections[roundNum][gameId] = winner;
+						});
+					}
+				);
+
+				setComparisonResults(transformedSelections);
+				setComparisonBracketName(
+					`${bracketData.name} (${bracketData.userName})`
+				);
+				setIsComparingBrackets(true);
+			} else {
+				// Bracket not found, revert to actual results
+				setComparisonResults(actualResults || {});
+				setComparisonBracketName('Actual Results');
+				setIsComparingBrackets(false);
+			}
+		} catch (err) {
+			console.error('Error fetching bracket for comparison:', err);
+			// Revert to actual results on error
+			setComparisonResults(actualResults || {});
+			setComparisonBracketName('Actual Results');
+			setIsComparingBrackets(false);
+		}
+	};
+
+	// Add this effect to update comparison results when bracketId changes
+	useEffect(() => {
+		if (comparisonBracketId) {
+			fetchBracketForComparison(comparisonBracketId);
+		}
+	}, [comparisonBracketId]);
+
+	// Add this effect to set the initial comparison results to the actual results
+	useEffect(() => {
+		if (tournament?.rounds) {
+			const results = processActualResults(tournament);
+			setComparisonResults(results);
+		}
+	}, [tournament]);
+
 	// Loading state
 	if (loading) {
 		return (
@@ -773,7 +847,7 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 						xmlns='http://www.w3.org/2000/svg'
 						className='stroke-current shrink-0 h-6 w-6'
 						fill='none'
-						viewBox='0 0 24 24'
+						viewBox='0 24 24'
 					>
 						<path
 							strokeLinecap='round'
@@ -797,26 +871,77 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 							{completion.completed} of {completion.total} games
 							completed ({completion.percent}%)
 						</p>
+
+						{/* Add comparison mode indicator */}
+						{isComparingBrackets && (
+							<div className='mt-2 alert alert-warning py-1 px-3'>
+								<svg
+									xmlns='http://www.w3.org/2000/svg'
+									className='stroke-current shrink-0 h-4 w-4'
+									fill='none'
+									viewBox='0 0 24 24'
+								>
+									<path
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										strokeWidth='2'
+										d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+									/>
+								</svg>
+								<span className='text-xs'>
+									Viewing "{comparisonBracketName}" bracket
+									instead of actual results
+								</span>
+							</div>
+						)}
 					</div>
 
-					<div className='flex gap-2 flex-wrap'>
-						{roundInfo.map((round, index) => (
-							<div
-								key={round.number}
-								className={`badge ${
-									index + 1 === currentRound
-										? 'badge-secondary'
-										: index + 1 < currentRound
-										? 'badge-success'
-										: 'badge-outline'
-								}`}
+					{/* Add bracket comparison selector */}
+					<div className='flex flex-col gap-2'>
+						<BracketComparisonSelector
+							tournamentId={tournamentId}
+							onBracketSelect={setComparisonBracketId}
+							currentBracketId={comparisonBracketId}
+						/>
+
+						{isComparingBrackets && (
+							<button
+								className='btn btn-sm btn-outline btn-warning'
+								onClick={() => setComparisonBracketId('actual')}
 							>
-								{round.name}
-							</div>
-						))}
+								Reset to Actual Results
+							</button>
+						)}
 					</div>
 				</div>
 			</div>
+
+			{/* Add the new comparison mode alert here */}
+			{isComparingBrackets && (
+				<div className='alert alert-warning mb-4'>
+					<svg
+						xmlns='http://www.w3.org/2000/svg'
+						className='stroke-current shrink-0 h-6 w-6'
+						fill='none'
+						viewBox='0 0 24 24'
+					>
+						<path
+							strokeLinecap='round'
+							strokeLinejoin='round'
+							strokeWidth='2'
+							d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+						/>
+					</svg>
+					<div>
+						<h3 className='font-bold'>Comparison Mode Active</h3>
+						<div className='text-sm'>
+							You're viewing a user's bracket instead of actual
+							results. Admin actions will still use the official
+							results.
+						</div>
+					</div>
+				</div>
+			)}
 
 			{/* Round tabs */}
 			<div className='tabs tabs-boxed justify-center'>
@@ -874,7 +999,14 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 													<span
 														className={
 															game.actualWinner ===
-															game.teamA
+																game.teamA ||
+															(isComparingBrackets &&
+																comparisonResults[
+																	currentRound
+																]?.[
+																	game.gameId
+																] ===
+																	game.teamA)
 																? 'font-bold text-success'
 																: ''
 														}
@@ -897,7 +1029,14 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 													<span
 														className={
 															game.actualWinner ===
-															game.teamB
+																game.teamB ||
+															(isComparingBrackets &&
+																comparisonResults[
+																	currentRound
+																]?.[
+																	game.gameId
+																] ===
+																	game.teamB)
 																? 'font-bold text-success'
 																: ''
 														}
@@ -912,7 +1051,26 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 											)}
 										</td>
 										<td>
-											{game.actualWinner ? (
+											{isComparingBrackets ? (
+												comparisonResults[
+													currentRound
+												]?.[game.gameId] ? (
+													<span className='font-bold text-success'>
+														{
+															comparisonResults[
+																currentRound
+															][game.gameId]
+														}
+														<span className='text-xs ml-1 opacity-70'>
+															(From bracket)
+														</span>
+													</span>
+												) : (
+													<span className='text-base-content/50'>
+														Not picked
+													</span>
+												)
+											) : game.actualWinner ? (
 												<span className='font-bold text-success'>
 													{game.actualWinner}
 												</span>
