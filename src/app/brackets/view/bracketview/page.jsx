@@ -364,8 +364,8 @@ export default function BracketViewPage() {
 								{[1, 2, 3, 4, 5, 6].map((round) => (
 									<a
 										key={round}
-										className={`btn ${
-											round === 1 ? 'tab-active' : ''
+										className={`btn btn-secondary mb-1 ${
+											round === 1 ? 'btn-ghost text-secondary border border-secondary font-black' : ''
 										}`}
 										onClick={() =>
 											document
