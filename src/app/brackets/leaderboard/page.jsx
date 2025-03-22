@@ -417,12 +417,12 @@ export default function LeaderboardPage() {
 											className={`btn btn-sm ${
 												user &&
 												entry.userId === user.uid
-													? 'btn-secondary'
+													? 'btn-ghost text-secondary font-extabold border-secondary'
 													: 'btn-outline'
 											}`}
 										>
 											{user && entry.userId === user.uid
-												? 'View Your Bracket'
+												? 'Your Bracket'
 												: 'View Bracket'}
 										</Link>
 									</td>
