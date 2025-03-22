@@ -26,14 +26,9 @@
 
 				if (bracketId) {
 					console.log('Found bracket redirect parameter:', bracketId);
-					// Store it in case our app needs it
-					sessionStorage.setItem('bracketId', bracketId);
-
-					// If we're already on the homepage, redirect immediately
-					// This helps avoid flashing the homepage before redirecting
-					if (window.location.pathname === '/') {
-						window.location.href = '/brackets/view/' + bracketId;
-					}
+					// Redirect to the new static URL
+					window.location.href =
+						'/brackets/view/bracketview?id=' + bracketId;
 				}
 			})();
 		</script>

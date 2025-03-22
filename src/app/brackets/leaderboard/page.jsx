@@ -413,10 +413,17 @@ export default function LeaderboardPage() {
 									</td>
 									<td className='text-right'>
 										<Link
-											href={`/brackets/view/${entry.bracketId}`}
-											className='btn btn-sm btn-outline'
+											href={`/brackets/view/bracketview?id=${entry.bracketId}`}
+											className={`btn btn-sm ${
+												user &&
+												entry.userId === user.uid
+													? 'btn-primary'
+													: 'btn-outline'
+											}`}
 										>
-											View Bracket
+											{user && entry.userId === user.uid
+												? 'View Your Bracket'
+												: 'View Bracket'}
 										</Link>
 									</td>
 								</tr>

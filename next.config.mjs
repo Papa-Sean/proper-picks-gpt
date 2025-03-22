@@ -1,10 +1,31 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+	// ENABLE this for static export
 	output: 'export',
 
 	images: {
 		unoptimized: true,
 	},
+
+	// Disable strict mode to reduce double renders
+	reactStrictMode: false,
+
+	// Remove the redirects section or modify it to avoid loops
+	// async redirects() {
+	//   return [
+	//     {
+	//       source: '/login',
+	//       has: [
+	//         {
+	//           type: 'cookie',
+	//           key: 'auth',
+	//         },
+	//       ],
+	//       destination: '/data-dashboard',
+	//       permanent: false,
+	//     },
+	//   ];
+	// },
 
 	env: {
 		NEXT_PUBLIC_FIREBASE_API_KEY:
@@ -26,8 +47,6 @@ const nextConfig = {
 			process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
 			'1:729631288438:web:836928f5e6c6f600784357',
 	},
-
-	// Remove any redirects config since they don't work with export
 };
 
 export default nextConfig;

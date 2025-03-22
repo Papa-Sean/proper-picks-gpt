@@ -141,7 +141,7 @@ function DashboardContent() {
 						{/* Image with proper responsive sizing */}
 
 						{/* Content with better spacing for mobile */}
-						<div className='w-full lg:w-1/2'>
+						<div className='w-full text-center flex flex-col items-center'>
 							<h2 className='text-2xl md:text-3xl font-bold text-center lg:text-left'>
 								Create Your March Madness Bracket!
 							</h2>
@@ -188,8 +188,7 @@ function DashboardContent() {
 							) : (
 								<>
 									<p className='py-3 md:py-4 text-sm md:text-base text-center lg:text-left'>
-										The tournament has already begun! While
-										you can't submit a new bracket, you can
+										The tournament has already begun! You can
 										view the leaderboard.
 									</p>
 									<div className='mt-4 flex justify-center lg:justify-start'>
@@ -211,7 +210,7 @@ function DashboardContent() {
 			<div className='bg-primary text-primary-content py-8 md:py-12 px-4 md:px-6'>
 				<div className='container mx-auto'>
 					<div className='flex flex-col lg:flex-row-reverse gap-6 items-center'>
-						<div className='w-full lg:w-2/3'>
+						<div className='w-full flex flex-col justify-center items-center'>
 							<h2 className='text-2xl md:text-3xl font-bold text-center lg:text-left mb-3 md:mb-4'>
 								AI Bracket Predictions
 							</h2>
@@ -284,27 +283,27 @@ function DashboardContent() {
 							</div>
 
 							{/* Stats section with responsive design */}
-							<div className='mt-6 flex justify-center lg:justify-start'>
-								<div className='stats shadow flex-col sm:flex-row text-primary-content bg-primary-focus bg-opacity-50'>
+							<div className='mt-6 flex justify-center w-full'>
+								<div className='stats lg:w-1/3 shadow flex-col sm:flex-row text-primary-content bg-primary-focus bg-opacity-50'>
 									<div className='stat py-2 md:py-4 px-4 md:px-6'>
-										<div className='stat-title text-primary-content text-opacity-80 text-xs md:text-sm'>
+										<div className='stat-title text-primary-content text-center text-opacity-80 text-xs md:text-sm'>
 											Data Points
 										</div>
-										<div className='stat-value text-lg md:text-2xl'>
+										<div className='stat-value text-lg md:text-2xl text-center'>
 											10M+
 										</div>
-										<div className='stat-desc text-primary-content text-opacity-70 text-xs'>
+										<div className='stat-desc text-primary-content text-opacity-70 text-xs text-center'>
 											Per tournament
 										</div>
 									</div>
 									<div className='stat py-2 md:py-4 px-4 md:px-6'>
-										<div className='stat-title text-primary-content text-opacity-80 text-xs md:text-sm'>
+										<div className='stat-title text-primary-content text-opacity-80 text-xs md:text-sm text-center'>
 											AI Models
 										</div>
-										<div className='stat-value text-lg md:text-2xl'>
+										<div className='stat-value text-lg md:text-2xl text-center'>
 											4
 										</div>
-										<div className='stat-desc text-primary-content text-opacity-70 text-xs'>
+										<div className='stat-desc text-primary-content text-opacity-70 text-xs text-center'>
 											Competing models
 										</div>
 									</div>

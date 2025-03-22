@@ -276,8 +276,7 @@ export default function BracketViewPage() {
 
 									<div className='card-actions justify-end mt-4'>
 										<Link
-											href={`/brackets/view/${bracket.id}`}
-											className='btn btn-primary'
+href={`/brackets/view/bracketview?id=${entry.bracketId}`}											className='btn btn-primary'
 											prefetch={false} // Important for static export
 										>
 											View Bracket

@@ -10,6 +10,7 @@ import SelectWinner from '@/components/SelectWinner';
 import TournamentRoundContainer from '@/components/TournamentRoundContainer';
 // Fix your import path - use the correct path
 import dummyTeams from '@/dummyTeams'; // Make sure this file exists at src/dummyTeams.js
+import { useUserBracket } from '@/hooks/useUserBracket'
 import {
 	doc,
 	setDoc,
@@ -144,7 +145,7 @@ export default function CreateBracketPage() {
 			if (!querySnapshot.empty) {
 				// User has an existing bracket
 				const bracketData = querySnapshot.docs[0].data();
-				const bracketId = querySnapshot.docs[0].id;
+				const { bracketId } = useUserBracket()
 
 				// Provide clear options for the user
 				const userChoice = confirm(
@@ -155,7 +156,7 @@ export default function CreateBracketPage() {
 
 				if (userChoice) {
 					// User wants to view their existing bracket
-					router.push(`/brackets/view/${bracketId}`);
+					router.push(`/brackets/view/bracketview/${bracketId}`);
 					return true;
 				} else {
 					// User wants to create a new one (will replace existing)

@@ -12,6 +12,7 @@ import {
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/config/firebase';
 import { setUser, clearUser } from '@/store/authSlice';
+import { syncAuthState, canRedirect } from '@/utils/authSync';
 
 export function useAuth() {
 	const { user, isAuthenticated } = useSelector((state) => state.auth);
@@ -71,18 +72,25 @@ export function useAuth() {
 		setIsLoading(true);
 		setError(null);
 		try {
+			// Clear localStorage first to prevent redirect race conditions
+			if (typeof window !== 'undefined') {
+				localStorage.removeItem('auth');
+				localStorage.removeItem('redirectStarted');
+				localStorage.removeItem('redirectCount');
+			}
+
+			// Then sign out from Firebase
 			await signOut(auth);
 			dispatch(clearUser());
-			if (isClientSide) {
-				localStorage.removeItem('auth');
-			}
+
+			return true;
 		} catch (err) {
 			setError(err.message);
 			throw err;
 		} finally {
 			setIsLoading(false);
 		}
-	}, [dispatch, isClientSide]);
+	}, [dispatch]);
 
 	const signInWithGoogle = useCallback(async () => {
 		setIsLoading(true);

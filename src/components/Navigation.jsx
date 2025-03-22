@@ -4,14 +4,17 @@ import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserBracket } from '@/hooks/useUserBracket';
 import Link from 'next/link';
 import NavLink from './NavLink';
+
 
 export default function Navigation() {
 	const pathname = usePathname();
 	const router = useRouter();
 	const { user, logout } = useAuth();
 	const { isAuthenticated, isAdmin } = useSelector((state) => state.auth);
+	const { bracketId } = useUserBracket();
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	// Important: Use this to defer client-side rendering until after hydration
@@ -43,6 +46,26 @@ export default function Navigation() {
 			setTimeout(() => {
 				localStorage.setItem('redirectCount', '0');
 			}, 5000);
+		}
+	}, []);
+
+	// Add this effect to detect and break redirect loops
+	useEffect(() => {
+		if (typeof window !== 'undefined') {
+			const redirectCount = parseInt(
+				localStorage.getItem('redirectCount') || '0'
+			);
+
+			if (redirectCount > 5) {
+				console.log('Breaking potential redirect loop');
+				localStorage.removeItem('redirectCount');
+				localStorage.removeItem('redirectStarted');
+				localStorage.removeItem('auth');
+
+				// Force reset application state
+				window.location.href = '/login?reset=true';
+				return;
+			}
 		}
 	}, []);
 
@@ -99,7 +122,7 @@ export default function Navigation() {
 			label: 'Leaderboard',
 			requiresAuth: true,
 		},
-		{ path: '/brackets/view', label: 'My Brackets', requiresAuth: true },
+		{ path: `/brackets/view/bracketview?id=${bracketId}`, label: 'My Bracket', requiresAuth: true },
 	];
 
 	// Only render navigation items on the client, after hydration is complete
@@ -186,8 +209,17 @@ export default function Navigation() {
 											<Link href='/profile'>Profile</Link>
 										</li>
 										<li>
-											<Link href='/brackets/view'>
-												My Brackets
+											<Link
+												href={
+													bracketId
+														? `/brackets/view/bracketview?id=${bracketId}`
+														: '/brackets/create'
+												}
+												className='your-existing-class-names'
+											>
+												{bracketId
+													? 'My Bracket'
+													: 'Create Bracket'}
 											</Link>
 										</li>
 										{isAdmin && (
@@ -334,10 +366,16 @@ export default function Navigation() {
 									<>
 										<li>
 											<Link
-												href='/brackets/view'
-												className='font-medium'
+												href={
+													bracketId
+														? `/brackets/view/bracketview?id=${bracketId}`
+														: '/brackets/create'
+												}
+												className='your-existing-class-names'
 											>
-												My Brackets
+												{bracketId
+													? 'My Bracket'
+													: 'Create Bracket'}
 											</Link>
 										</li>
 										{isAdmin && (

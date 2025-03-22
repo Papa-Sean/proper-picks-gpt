@@ -21,9 +21,13 @@ export default function AuthProvider({ children }) {
 		setIsClient(true);
 	}, []);
 
+	// Add this to prevent server-side redirects
+	const isClientSide = typeof window !== 'undefined';
+
+	// In your redirect logic:
 	useEffect(() => {
-		// Skip server-side execution
-		if (!isClient) return;
+		// Only run redirects on the client side
+		if (!isClientSide) return;
 
 		// List of routes that don't require authentication
 		const publicRoutes = ['/', '/login', '/register', '/reset-password'];
@@ -68,8 +72,8 @@ export default function AuthProvider({ children }) {
 			);
 			localStorage.setItem('redirectStarted', Date.now().toString());
 
-			// Always redirect to data-dashboard instead of profile
-			window.location.href = '/data-dashboard';
+			// Use router.push instead of window.location for Next.js routing
+			router.push('/data-dashboard');
 			return;
 		}
 
@@ -93,7 +97,7 @@ export default function AuthProvider({ children }) {
 
 			window.location.href = '/login';
 		}
-	}, [isAuthenticated, isLoading, pathname, router, isClient]);
+	}, [isAuthenticated, isLoading, pathname, router, isClientSide]);
 
 	// Add this useEffect before the auth state listener
 	useEffect(() => {
