@@ -182,15 +182,22 @@ export default function BracketViewPage() {
 	// Only define this once the bracket is loaded
 	const isOwnBracket = user && bracket.userId === user.uid;
 
-	// Calculate bracket stats
+	// Calculate bracket stats - Fix the totalPicks calculation
 	const bracketStats = {
-		totalPicks: Object.keys(bracket.selections || {}).length,
+		// Count actual number of selections across all rounds
+		totalPicks: 0,
 		correctPicks: 0,
 		score: 0,
 	};
 
-	// Calculate correct picks
+	// Calculate correct picks and count totalPicks properly
 	if (bracket.selections && actualResults) {
+		// First calculate the total number of picks across all rounds
+		Object.values(bracket.selections).forEach((roundSelections) => {
+			bracketStats.totalPicks += Object.keys(roundSelections).length;
+		});
+
+		// Then calculate correct picks and score
 		Object.entries(bracket.selections).forEach(([round, games]) => {
 			const roundNum = parseInt(round);
 			Object.entries(games).forEach(([gameId, pick]) => {
