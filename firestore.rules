@@ -60,12 +60,9 @@ service cloud.firestore {
 
     // Track user message counts
     match /userMessageCounts/{userId} {
-      // Users can read their own message count
-      allow read: if request.auth != null && 
-                  request.auth.uid == userId;
-      
-      // Admin function will handle updates to message counts
-      allow write: if false;
+      // Users can read and write their own message count
+      allow read, write: if request.auth != null && 
+                         request.auth.uid == userId;
     }
   }
 }

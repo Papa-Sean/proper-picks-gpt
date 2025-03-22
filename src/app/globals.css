@@ -100,6 +100,40 @@
 	animation: typing 1.5s steps(40);
 }
 
+/* Add these styles after your existing animations */
+
+@keyframes pulse-green {
+	0%,
+	100% {
+		box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+	}
+	50% {
+		box-shadow: 0 0 20px rgba(16, 185, 129, 0.8);
+	}
+}
+
+.animate-green-pulse {
+	animation: pulse-green 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Terminal scrollbar styling */
+.text-green-400::-webkit-scrollbar {
+	width: 8px;
+}
+
+.text-green-400::-webkit-scrollbar-track {
+	background: #111;
+}
+
+.text-green-400::-webkit-scrollbar-thumb {
+	background: #064e3b;
+	border-radius: 4px;
+}
+
+.text-green-400::-webkit-scrollbar-thumb:hover {
+	background: #065f46;
+}
+
 /* Add at the bottom */
 html,
 body {

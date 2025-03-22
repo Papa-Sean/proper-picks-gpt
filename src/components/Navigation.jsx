@@ -126,6 +126,11 @@ export default function Navigation() {
 			label: 'My Bracket',
 			requiresAuth: true,
 		},
+		{
+			path: '/discussion',
+			label: 'Discussion',
+			requiresAuth: true,
+		},
 	];
 
 	// Only render navigation items on the client, after hydration is complete
@@ -155,6 +160,7 @@ export default function Navigation() {
 							{item.label}
 						</NavLink>
 					</li>
+					
 				)
 		);
 	};
