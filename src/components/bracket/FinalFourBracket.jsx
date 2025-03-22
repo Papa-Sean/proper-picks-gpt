@@ -36,7 +36,7 @@ export default function FinalFourBracket({
 			</div>
 
 			{/* Championship */}
-			<div className='w-full bg-base-200 p-2 rounded-lg border-2 border-primary mt-4 mb-4'>
+			<div className='w-full bg-base-200 p-2 rounded-lg border-2 border-secondary mt-4 mb-4'>
 				<GameCard
 					game={championshipGame}
 					round={6}

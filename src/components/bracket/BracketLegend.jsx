@@ -34,7 +34,7 @@ export default function BracketLegend() {
 				<span>Incorrect Pick</span>
 			</div>
 			<div className='flex items-center'>
-				<div className='w-3 h-3 bg-primary/20 border border-primary mr-2'></div>
+				<div className='w-3 h-3 bg-secondary/20 border border-secondary mr-2'></div>
 				<span>Your Selection</span>
 			</div>
 		</div>

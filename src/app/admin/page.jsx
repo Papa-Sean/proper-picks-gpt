@@ -50,7 +50,7 @@ export default function AdminPage() {
 						<div className='card-actions justify-end'>
 							<Link
 								href='/admin/tournament'
-								className='btn btn-primary'
+								className='btn btn-secondary'
 							>
 								Manage Tournament
 							</Link>
@@ -67,7 +67,7 @@ export default function AdminPage() {
 						<div className='card-actions justify-end'>
 							<Link
 								href='/admin/users'
-								className='btn btn-primary'
+								className='btn btn-secondary'
 							>
 								Manage Users
 							</Link>

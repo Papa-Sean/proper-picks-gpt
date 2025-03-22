@@ -8,7 +8,6 @@ import { useUserBracket } from '@/hooks/useUserBracket';
 import Link from 'next/link';
 import NavLink from './NavLink';
 
-
 export default function Navigation() {
 	const pathname = usePathname();
 	const router = useRouter();
@@ -122,7 +121,11 @@ export default function Navigation() {
 			label: 'Leaderboard',
 			requiresAuth: true,
 		},
-		{ path: `/brackets/view/bracketview?id=${bracketId}`, label: 'My Bracket', requiresAuth: true },
+		{
+			path: `/brackets/view/bracketview?id=${bracketId}`,
+			label: 'My Bracket',
+			requiresAuth: true,
+		},
 	];
 
 	// Only render navigation items on the client, after hydration is complete
@@ -267,7 +270,7 @@ export default function Navigation() {
 											</Link>
 											<Link
 												href='/login?signup=true'
-												className='btn btn-primary'
+												className='btn btn-secondary'
 											>
 												Sign up
 											</Link>
@@ -448,7 +451,7 @@ export default function Navigation() {
 										<li>
 											<Link
 												href='/login?signup=true'
-												className='btn btn-primary justify-start mt-2'
+												className='btn btn-secondary justify-start mt-2'
 											>
 												Sign up
 											</Link>

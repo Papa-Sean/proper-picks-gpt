@@ -44,7 +44,7 @@ function ProgressTracker({
 			<h3 className='text-lg font-bold mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2'>
 				<span>Bracket Progress</span>
 				<button
-					className='btn btn-primary btn-sm'
+					className='btn btn-secondary btn-sm'
 					onClick={onContinueBuilding}
 				>
 					Continue Building
@@ -63,7 +63,7 @@ function ProgressTracker({
 				</div>
 				<div className='w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700'>
 					<div
-						className='bg-primary h-2.5 rounded-full'
+						className='bg-secondary h-2.5 rounded-full'
 						style={{ width: `${totalProgress}%` }}
 					></div>
 				</div>
@@ -90,7 +90,7 @@ function ProgressTracker({
 							key={round.number}
 							className={`card bg-base-100 shadow-sm border ${
 								currentStep === round.number
-									? 'border-primary'
+									? 'border-secondary'
 									: 'border-base-300'
 							} hover:shadow-md transition-shadow cursor-pointer`}
 							onClick={() => {
@@ -125,7 +125,7 @@ function ProgressTracker({
 									className={`progress mt-1 ${
 										percent === 100
 											? 'progress-success'
-											: 'progress-primary'
+											: 'progress-secondary'
 									}`}
 									value={selections}
 									max={total}

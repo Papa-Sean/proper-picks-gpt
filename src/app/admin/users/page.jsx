@@ -194,7 +194,7 @@ export default function AdminUsersPage() {
 						onChange={(e) => setNewAdminEmail(e.target.value)}
 					/>
 					<button
-						className='btn btn-primary'
+						className='btn btn-secondary'
 						onClick={handleAddAdmin}
 						disabled={isUpdating}
 					>

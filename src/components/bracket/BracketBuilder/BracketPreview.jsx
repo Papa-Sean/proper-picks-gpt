@@ -29,7 +29,7 @@ export default function BracketPreview({
 				<div className='flex justify-between items-center mb-4'>
 					<h3 className='card-title text-lg'>Bracket Preview</h3>
 					<button
-						className='btn btn-primary btn-sm'
+						className='btn btn-secondary btn-sm'
 						onClick={onContinueBuilding}
 					>
 						Continue Building

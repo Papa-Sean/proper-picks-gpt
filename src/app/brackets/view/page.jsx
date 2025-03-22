@@ -91,7 +91,7 @@ export default function BracketViewPage() {
 		return (
 			<CreateBracketContainer title='Checking Authentication...'>
 				<div className='flex flex-col items-center justify-center py-12'>
-					<div className='loading loading-spinner loading-lg text-primary mb-4'></div>
+					<div className='loading loading-spinner loading-lg text-secondary mb-4'></div>
 					<p className='text-lg'>Verifying your login status...</p>
 				</div>
 			</CreateBracketContainer>
@@ -123,7 +123,7 @@ export default function BracketViewPage() {
 					</div>
 					<Link
 						href='/login?redirect=/brackets/view'
-						className='btn btn-primary btn-lg'
+						className='btn btn-secondary btn-lg'
 					>
 						Log In
 					</Link>
@@ -145,7 +145,7 @@ export default function BracketViewPage() {
 		return (
 			<CreateBracketContainer title='Loading Your Brackets...'>
 				<div className='flex flex-col items-center justify-center py-12'>
-					<div className='loading loading-spinner loading-lg text-primary mb-4'></div>
+					<div className='loading loading-spinner loading-lg text-secondary mb-4'></div>
 					<p className='text-lg'>
 						Loading your bracket submissions...
 					</p>
@@ -177,7 +177,7 @@ export default function BracketViewPage() {
 				<div className='mt-6 flex flex-col sm:flex-row gap-4 justify-center'>
 					<Link
 						href='/brackets/create'
-						className='btn btn-primary'
+						className='btn btn-secondary'
 					>
 						Create New Bracket
 					</Link>
@@ -202,7 +202,7 @@ export default function BracketViewPage() {
 					</h2>
 					<Link
 						href='/brackets/create'
-						className='btn btn-primary'
+						className='btn btn-secondary'
 					>
 						Create New Bracket
 					</Link>
@@ -233,7 +233,7 @@ export default function BracketViewPage() {
 						</p>
 						<Link
 							href='/brackets/create'
-							className='btn btn-primary'
+							className='btn btn-secondary'
 						>
 							Create Your First Bracket
 						</Link>
@@ -260,7 +260,7 @@ export default function BracketViewPage() {
 											<div className='stat-title text-xs'>
 												Score
 											</div>
-											<div className='stat-value text-primary text-xl'>
+											<div className='stat-value text-secondary text-xl'>
 												{bracket.points}
 											</div>
 											<div className='stat-desc text-xs'>
@@ -276,7 +276,8 @@ export default function BracketViewPage() {
 
 									<div className='card-actions justify-end mt-4'>
 										<Link
-href={`/brackets/view/bracketview?id=${entry.bracketId}`}											className='btn btn-primary'
+											href={`/brackets/view/bracketview?id=${entry.bracketId}`}
+											className='btn btn-secondary'
 											prefetch={false} // Important for static export
 										>
 											View Bracket

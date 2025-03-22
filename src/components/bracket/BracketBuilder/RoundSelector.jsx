@@ -114,7 +114,7 @@ function RoundSelector({
 					</button>
 
 					<button
-						className='btn btn-primary btn-sm'
+						className='btn btn-secondary btn-sm'
 						onClick={onNextStep}
 						disabled={!isRoundComplete(currentStep)}
 					>
@@ -138,7 +138,7 @@ function RoundSelector({
 
 				{/* Completion indicator */}
 				<div className='order-1 sm:order-none self-center'>
-					<div className='badge badge-primary p-3'>
+					<div className='badge badge-secondary p-3'>
 						{completion.percent}% Complete
 					</div>
 				</div>

@@ -179,7 +179,7 @@ function DashboardContent() {
 									<div className='mt-4 flex justify-center lg:justify-start'>
 										<Link
 											href='/brackets/create'
-											className='btn btn-primary'
+											className='btn btn-secondary'
 										>
 											Create My Bracket
 										</Link>
@@ -188,13 +188,13 @@ function DashboardContent() {
 							) : (
 								<>
 									<p className='py-3 md:py-4 text-sm md:text-base text-center lg:text-left'>
-										The tournament has already begun! You can
-										view the leaderboard.
+										The tournament has already begun! You
+										can view the leaderboard.
 									</p>
 									<div className='mt-4 flex justify-center lg:justify-start'>
 										<Link
 											href='/brackets/leaderboard'
-											className='btn btn-primary'
+											className='btn btn-secondary'
 										>
 											View Leaderboard
 										</Link>
@@ -207,7 +207,7 @@ function DashboardContent() {
 			</div>
 
 			{/* AI Models Section - Improved mobile layout */}
-			<div className='bg-primary text-primary-content py-8 md:py-12 px-4 md:px-6'>
+			<div className='bg-secondary text-secondary-content py-8 md:py-12 px-4 md:px-6'>
 				<div className='container mx-auto'>
 					<div className='flex flex-col lg:flex-row-reverse gap-6 items-center'>
 						<div className='w-full flex flex-col justify-center items-center'>
@@ -284,26 +284,26 @@ function DashboardContent() {
 
 							{/* Stats section with responsive design */}
 							<div className='mt-6 flex justify-center w-full'>
-								<div className='stats lg:w-1/3 shadow flex-col sm:flex-row text-primary-content bg-primary-focus bg-opacity-50'>
+								<div className='stats lg:w-1/3 shadow flex-col sm:flex-row text-secondary-content bg-secondary-focus bg-opacity-50'>
 									<div className='stat py-2 md:py-4 px-4 md:px-6'>
-										<div className='stat-title text-primary-content text-center text-opacity-80 text-xs md:text-sm'>
+										<div className='stat-title text-secondary-content text-center text-opacity-80 text-xs md:text-sm'>
 											Data Points
 										</div>
 										<div className='stat-value text-lg md:text-2xl text-center'>
 											10M+
 										</div>
-										<div className='stat-desc text-primary-content text-opacity-70 text-xs text-center'>
+										<div className='stat-desc text-secondary-content text-opacity-70 text-xs text-center'>
 											Per tournament
 										</div>
 									</div>
 									<div className='stat py-2 md:py-4 px-4 md:px-6'>
-										<div className='stat-title text-primary-content text-opacity-80 text-xs md:text-sm text-center'>
+										<div className='stat-title text-secondary-content text-opacity-80 text-xs md:text-sm text-center'>
 											AI Models
 										</div>
 										<div className='stat-value text-lg md:text-2xl text-center'>
 											4
 										</div>
-										<div className='stat-desc text-primary-content text-opacity-70 text-xs text-center'>
+										<div className='stat-desc text-secondary-content text-opacity-70 text-xs text-center'>
 											Competing models
 										</div>
 									</div>
@@ -328,7 +328,7 @@ function DashboardContent() {
 							<div className='card-body p-4 md:p-6'>
 								<h3 className='card-title text-lg md:text-xl flex items-center gap-2'>
 									<svg
-										className='w-5 h-5 text-primary'
+										className='w-5 h-5 text-secondary'
 										fill='currentColor'
 										viewBox='0 0 20 20'
 									>
@@ -348,7 +348,7 @@ function DashboardContent() {
 								<div className='card-actions justify-end mt-2'>
 									<Link
 										href='/brackets/view'
-										className='btn btn-sm md:btn-md btn-primary'
+										className='btn btn-sm md:btn-md btn-secondary'
 									>
 										View Brackets
 									</Link>
@@ -361,7 +361,7 @@ function DashboardContent() {
 							<div className='card-body p-4 md:p-6'>
 								<h3 className='card-title text-lg md:text-xl flex items-center gap-2'>
 									<svg
-										className='w-5 h-5 text-primary'
+										className='w-5 h-5 text-secondary'
 										fill='currentColor'
 										viewBox='0 0 20 20'
 									>
@@ -376,7 +376,7 @@ function DashboardContent() {
 								<div className='card-actions justify-end mt-2'>
 									<Link
 										href='/brackets/leaderboard'
-										className='btn btn-sm md:btn-md btn-primary'
+										className='btn btn-sm md:btn-md '
 									>
 										Check Rankings
 									</Link>
@@ -389,7 +389,7 @@ function DashboardContent() {
 							<div className='card-body p-4 md:p-6'>
 								<h3 className='card-title text-lg md:text-xl flex items-center gap-2'>
 									<svg
-										className='w-5 h-5 text-primary'
+										className='w-5 h-5 text-secondary'
 										fill='currentColor'
 										viewBox='0 0 20 20'
 									>

@@ -46,7 +46,7 @@ export default function SelectWinner({
 						disabled={disabled || !isReadyForSelection}
 						className={`btn btn-sm justify-start h-auto p-2 ${
 							userSelectedWinner === teamA
-								? 'btn-primary'
+								? 'btn-secondary'
 								: 'btn-ghost border border-base-300'
 						} ${disabled ? 'opacity-70' : ''}`}
 					>
@@ -80,7 +80,7 @@ export default function SelectWinner({
 						disabled={disabled || !isReadyForSelection}
 						className={`btn btn-sm justify-start h-auto p-2 ${
 							userSelectedWinner === teamB
-								? 'btn-primary'
+								? 'btn-secondary'
 								: 'btn-ghost border border-base-300'
 						} ${disabled ? 'opacity-70' : ''}`}
 					>
@@ -106,7 +106,7 @@ export default function SelectWinner({
 
 				{/* Selection indicator */}
 				{userSelectedWinner && (
-					<div className='text-xs text-center mt-2 text-primary-content bg-primary rounded-full py-1 px-2'>
+					<div className='text-xs text-center mt-2 text-secondary-content bg-secondary rounded-full py-1 px-2'>
 						Selected: {userSelectedWinner}
 					</div>
 				)}

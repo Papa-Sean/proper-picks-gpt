@@ -432,7 +432,7 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 			},
 		});
 	};
-    
+
 	// Update all bracket scores based on actual results
 	const updateAllBracketScores = async () => {
 		setConfirmAction({
@@ -610,7 +610,6 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 			  }
 			: { seed: '?', record: '', region: '' };
 	};
-    
 
 	// Helper to get completion status for current round
 	const getCurrentRoundCompletion = () => {
@@ -628,8 +627,6 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 		};
 	};
 
-    
-
 	// Set isClient to true on mount
 	useEffect(() => {
 		setIsClient(true);
@@ -639,7 +636,7 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 	if (loading) {
 		return (
 			<div className='flex justify-center items-center min-h-[400px]'>
-				<div className='loading loading-spinner loading-lg text-primary'></div>
+				<div className='loading loading-spinner loading-lg text-secondary'></div>
 			</div>
 		);
 	}
@@ -714,7 +711,7 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 
 				<div className='flex flex-col sm:flex-row gap-2'>
 					<button
-						className='btn btn-primary'
+						className='btn btn-secondary'
 						onClick={saveTournamentResults}
 						disabled={isUpdating}
 					>
@@ -808,7 +805,7 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 								key={round.number}
 								className={`badge ${
 									index + 1 === currentRound
-										? 'badge-primary'
+										? 'badge-secondary'
 										: index + 1 < currentRound
 										? 'badge-success'
 										: 'badge-outline'
@@ -1004,7 +1001,7 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 					</h3>
 					<div className='flex flex-col gap-2'>
 						<progress
-							className='progress progress-primary'
+							className='progress progress-secondary'
 							value={batchUpdateStats.processed}
 							max={batchUpdateStats.total}
 						></progress>
@@ -1033,7 +1030,7 @@ export default function ActualOutcomesForm({ tournamentId = 'ncaa-2025' }) {
 								Cancel
 							</button>
 							<button
-								className='btn btn-primary'
+								className='btn btn-secondary'
 								onClick={confirmAction.action}
 								disabled={isUpdating}
 							>

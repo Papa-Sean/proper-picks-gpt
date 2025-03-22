@@ -263,7 +263,7 @@ export default function BracketBuilder({
 					>
 						{name}
 						{roundCompletion[index + 1]?.total > 0 && (
-							<span className='absolute -top-1 -right-1 badge badge-sm badge-primary'>
+							<span className='absolute -top-1 -right-1 badge badge-sm badge-secondary'>
 								{roundCompletion[index + 1]?.filled}/
 								{roundCompletion[index + 1]?.total}
 							</span>
@@ -279,7 +279,7 @@ export default function BracketBuilder({
 						key={`round-${round}`}
 						className={`${
 							parseInt(round) === activeRound
-								? 'ring-2 ring-primary rounded-lg'
+								? 'ring-2 ring-secondary rounded-lg'
 								: ''
 						}`}
 					>
@@ -384,7 +384,7 @@ export default function BracketBuilder({
 									</div>
 								</div>
 								<button
-									className='btn btn-sm btn-primary'
+									className='btn btn-sm btn-secondary'
 									onClick={() =>
 										setActiveRound(activeRound + 1)
 									}

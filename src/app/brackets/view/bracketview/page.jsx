@@ -119,7 +119,7 @@ export default function BracketViewPage() {
 		return (
 			<CreateBracketContainer title='Loading Bracket...'>
 				<div className='flex flex-col justify-center items-center h-64 p-4'>
-					<div className='loading loading-spinner loading-lg text-primary'></div>
+					<div className='loading loading-spinner loading-lg text-secondary'></div>
 					<p className='mt-4 text-base-content/70 text-center'>
 						Please wait while we load your bracket...
 					</p>
@@ -155,7 +155,7 @@ export default function BracketViewPage() {
 					<div className='mt-6 flex justify-center'>
 						<Link
 							href='/brackets/leaderboard'
-							className='btn btn-primary btn-md'
+							className='btn btn-secondary btn-md'
 						>
 							<svg
 								xmlns='http://www.w3.org/2000/svg'
@@ -226,7 +226,7 @@ export default function BracketViewPage() {
 							Created by: {bracket.userName || 'Anonymous User'}
 						</p>
 						{isOwnBracket && (
-							<div className='badge badge-primary my-2'>
+							<div className='badge badge-secondary my-2'>
 								Your Bracket
 							</div>
 						)}
@@ -303,7 +303,7 @@ export default function BracketViewPage() {
 				<div className='stats stats-vertical md:stats-horizontal shadow mt-4 w-full'>
 					<div className='stat'>
 						<div className='stat-title'>Score</div>
-						<div className='stat-value text-primary'>
+						<div className='stat-value text-secondary'>
 							{bracketStats.score}
 						</div>
 						<div className='stat-desc'>Points earned</div>
@@ -447,7 +447,7 @@ export default function BracketViewPage() {
 																				.gameId
 																	  ]
 																	? 'bg-warning/10 border-warning'
-																	: 'bg-primary/10 border-primary'
+																	: 'bg-secondary/10 border-secondary'
 																: bracket
 																		.selections?.[
 																		round
@@ -471,7 +471,7 @@ export default function BracketViewPage() {
 																				.gameId
 																	  ]
 																	? 'bg-warning/10 border-warning'
-																	: 'bg-primary/10 border-primary'
+																	: 'bg-secondary/10 border-secondary'
 																: 'border-base-300'
 														}`}
 													>
@@ -517,7 +517,7 @@ export default function BracketViewPage() {
 																						.gameId
 																			  ]
 																			? 'text-warning line-through'
-																			: 'text-primary'
+																			: 'text-secondary'
 																		: ''
 																}`}
 															>
@@ -565,7 +565,7 @@ export default function BracketViewPage() {
 																						.gameId
 																			  ]
 																			? 'text-warning line-through'
-																			: 'text-primary'
+																			: 'text-secondary'
 																		: ''
 																}`}
 															>
@@ -627,7 +627,7 @@ export default function BracketViewPage() {
 						<span>Incorrect Pick</span>
 					</div>
 					<div className='flex items-center'>
-						<div className='w-3 h-3 bg-primary/20 border border-primary mr-1'></div>
+						<div className='w-3 h-3 bg-secondary/20 border border-secondary mr-1'></div>
 						<span>Your Selection</span>
 					</div>
 				</div>

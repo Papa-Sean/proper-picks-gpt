@@ -87,7 +87,7 @@ export default function GameCard({
 	} else if (resultStatus === 'incorrect') {
 		resultStatusClasses = 'border-warning bg-warning/10';
 	} else if (userSelection) {
-		resultStatusClasses = 'border-primary bg-primary/10';
+		resultStatusClasses = 'border-secondary bg-secondary/10';
 	} else {
 		resultStatusClasses = 'border-gray-200';
 	}
@@ -112,7 +112,7 @@ export default function GameCard({
 								? 'font-bold text-success'
 								: resultStatus === 'incorrect'
 								? 'font-bold text-warning line-through'
-								: 'font-bold text-primary'
+								: 'font-bold text-secondary'
 							: ''
 					}`}
 				>
@@ -138,7 +138,7 @@ export default function GameCard({
 								? 'font-bold text-success'
 								: resultStatus === 'incorrect'
 								? 'font-bold text-warning line-through'
-								: 'font-bold text-primary'
+								: 'font-bold text-secondary'
 							: ''
 					}`}
 				>
@@ -155,8 +155,6 @@ export default function GameCard({
 					<span className='badge badge-xs badge-success'>✓</span>
 				)}
 			</div>
-
-			
 
 			{/* Show points earned for correct pick */}
 			{resultStatus === 'correct' && (

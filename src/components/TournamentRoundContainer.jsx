@@ -60,8 +60,8 @@ export default function TournamentRoundContainer({
 	if (!games.length && !tournamentRound) {
 		return (
 			<div className='mb-6'>
-				<div className='bg-primary bg-opacity-10 border border-primary rounded-lg p-4 text-center'>
-					<h3 className='font-bold text-primary mb-2'>
+				<div className='bg-secondary bg-opacity-10 border border-secondary rounded-lg p-4 text-center'>
+					<h3 className='font-bold text-secondary mb-2'>
 						Tournament Structure Preview
 					</h3>
 					<p className='text-sm'>
@@ -100,7 +100,7 @@ export default function TournamentRoundContainer({
 		<div className='flex-1 flex flex-col mb-6'>
 			{/* Round title */}
 			<div className='text-center mb-4'>
-				<div className='bg-primary text-primary-content py-2 px-4 rounded-lg inline-block shadow'>
+				<div className='bg-secondary text-secondary-content py-2 px-4 rounded-lg inline-block shadow'>
 					<h3 className='font-bold'>{tournamentRound}</h3>
 				</div>
 			</div>
@@ -120,7 +120,9 @@ export default function TournamentRoundContainer({
 						{/* Game card */}
 						<div
 							className={`card bg-base-100 shadow-md border ${
-								isActive ? 'border-primary' : 'border-base-200'
+								isActive
+									? 'border-secondary'
+									: 'border-base-200'
 							} ${getRegionClass(region)}`}
 						>
 							<div className='card-body p-4'>

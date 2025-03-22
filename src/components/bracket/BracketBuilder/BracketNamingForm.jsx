@@ -49,7 +49,7 @@ function BracketNamingForm({
 
 					<div className='w-full sm:w-auto order-1 sm:order-2'>
 						<button
-							className='btn btn-primary w-full sm:w-auto'
+							className='btn btn-secondary w-full sm:w-auto'
 							onClick={onSubmit}
 							disabled={isSubmitting || !bracketName.trim()}
 							type='button'

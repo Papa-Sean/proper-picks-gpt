@@ -226,7 +226,7 @@ export default function LeaderboardPage() {
 				<div className='mt-4 text-center'>
 					<Link
 						href='/brackets/create'
-						className='btn btn-primary'
+						className='btn btn-secondary'
 					>
 						Create a Bracket
 					</Link>
@@ -253,7 +253,7 @@ export default function LeaderboardPage() {
 								key={index}
 								className={`badge ${
 									index < tournamentInfo.currentRound
-										? 'badge-primary'
+										? 'badge-secondary'
 										: 'badge-outline'
 								}`}
 							>
@@ -304,7 +304,7 @@ export default function LeaderboardPage() {
 					{isAdmin && (
 						<Link
 							href='/admin/tournament'
-							className='btn btn-primary btn-sm'
+							className='btn btn-secondary btn-sm'
 						>
 							Update Results
 						</Link>
@@ -368,7 +368,7 @@ export default function LeaderboardPage() {
 								<tr
 									key={entry.bracketId}
 									className={`
-								  ${user && entry.userId === user.uid ? 'bg-primary bg-opacity-10' : ''}
+								  ${user && entry.userId === user.uid ? 'bg-secondary bg-opacity-10' : ''}
 								  ${recentlyUpdated ? 'bg-success bg-opacity-5' : ''}
 								`}
 								>
@@ -417,7 +417,7 @@ export default function LeaderboardPage() {
 											className={`btn btn-sm ${
 												user &&
 												entry.userId === user.uid
-													? 'btn-primary'
+													? 'btn-secondary'
 													: 'btn-outline'
 											}`}
 										>
@@ -461,7 +461,7 @@ export default function LeaderboardPage() {
 									key={`${entry.bracketId}-rounds`}
 									className={
 										user && entry.userId === user.uid
-											? 'bg-primary bg-opacity-10'
+											? 'bg-secondary bg-opacity-10'
 											: ''
 									}
 								>

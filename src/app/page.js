@@ -134,13 +134,13 @@ export default function Home() {
 					</p>
 					<button
 						onClick={handleDontClick}
-						className='btn btn-block mb-1 btn-primary py-2 px-4 sm:py-3 sm:px-8 rounded-lg transition-colors duration-200 mr-2 sm:mr-4 text-sm sm:text-base'
+						className='btn btn-block mb-1 btn-secondary py-2 px-4 sm:py-3 sm:px-8 rounded-lg transition-colors duration-200 mr-2 sm:mr-4 text-sm sm:text-base'
 					>
 						Don't Click
 					</button>
 					<Link
 						href='/register'
-						className='btn btn-block btn-primary py-2 px-4 sm:py-3 sm:px-8 rounded-lg transition-colors duration-200 text-sm sm:text-base'
+						className='btn btn-block btn-secondary py-2 px-4 sm:py-3 sm:px-8 rounded-lg transition-colors duration-200 text-sm sm:text-base'
 					>
 						Sign up
 					</Link>

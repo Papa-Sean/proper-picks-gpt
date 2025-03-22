@@ -25,7 +25,7 @@ export default function CreateBracketContainer({
 	if (isAuthenticated === undefined) {
 		return (
 			<div className='min-h-screen bg-base-200 flex justify-center items-center p-4'>
-				<div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary'></div>
+				<div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-secondary'></div>
 			</div>
 		);
 	}
@@ -41,7 +41,7 @@ export default function CreateBracketContainer({
 				{/* Card with shadow and contrast */}
 				<div className='bg-base-100 shadow-xl rounded-lg overflow-hidden'>
 					{/* Header */}
-					<div className='bg-primary text-primary-content p-6'>
+					<div className='bg-secondary text-secondary-content p-6'>
 						<h1 className='text-2xl font-bold'>{title}</h1>
 					</div>
 

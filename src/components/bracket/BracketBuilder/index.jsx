@@ -280,7 +280,7 @@ export default function BracketBuilder() {
 									</p>
 								</div>
 								<button
-									className='btn btn-primary'
+									className='btn btn-secondary'
 									onClick={() => setShowPreviewModal(true)}
 								>
 									Preview Full Bracket
@@ -289,7 +289,7 @@ export default function BracketBuilder() {
 
 							<div className='mt-4'>
 								<progress
-									className='progress progress-primary w-full'
+									className='progress progress-secondary w-full'
 									value={totalCompletion.completed}
 									max={totalCompletion.total}
 								></progress>
@@ -375,7 +375,7 @@ export default function BracketBuilder() {
 
 							<div className='mt-4 flex justify-end'>
 								<button
-									className='btn btn-primary'
+									className='btn btn-secondary'
 									onClick={() => setShowPreviewModal(false)}
 								>
 									Close Preview
