@@ -355,7 +355,7 @@ export default function BracketViewPage() {
 							Mobile Bracket View
 						</div>
 						<div className='collapse-content'>
-							<p className='text-sm text-base-content/70 mb-2'>
+							<p className='text-sm text-base-content/70 text-wrap mb-2'>
 								The complete bracket has been simplified for
 								mobile viewing. Swipe left/right to navigate.
 							</p>
@@ -364,7 +364,7 @@ export default function BracketViewPage() {
 								{[1, 2, 3, 4, 5, 6].map((round) => (
 									<a
 										key={round}
-										className={`tab ${
+										className={`btn ${
 											round === 1 ? 'tab-active' : ''
 										}`}
 										onClick={() =>
