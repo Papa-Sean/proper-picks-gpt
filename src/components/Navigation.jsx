@@ -157,7 +157,7 @@ export default function Navigation() {
 	};
 
 	return (
-		<div className='sticky top-0 z-50'>
+		<div className='sticky top-0 z-50 text-secondary'>
 			{/* Main Navbar - Single Row */}
 			<div className='navbar bg-base-100 shadow-md'>
 				<div className='container mx-auto px-4 flex items-center justify-between'>

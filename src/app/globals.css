@@ -97,3 +97,30 @@
 	white-space: nowrap;
 	animation: typing 1.5s steps(40);
 }
+
+/* Add at the bottom */
+html,
+body {
+	max-width: 100%;
+	overflow-x: hidden;
+}
+
+/* Ensure responsive images */
+img {
+	max-width: 100%;
+	height: auto;
+}
+
+/* Better mobile text handling */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	overflow-wrap: break-word;
+	word-wrap: break-word;
+	-ms-word-break: break-all;
+	word-break: break-word;
+}

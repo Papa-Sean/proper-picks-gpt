@@ -62,10 +62,12 @@ function MainLayout({ children }) {
 	}, []);
 
 	return (
-		<div className='flex flex-col min-h-screen'>
+		<div className='flex flex-col min-h-screen max-w-full overflow-x-hidden'>
 			<Navigation />
-			<main className='flex-grow'>{children}</main>
-			<footer className='bg-base-200 py-4 text-center'>
+			<main className='flex-grow w-full overflow-x-hidden'>
+				{children}
+			</main>
+			<footer className='bg-base-200 py-4 text-center w-full'>
 				<p>&copy; {new Date().getFullYear()} Proper Picks</p>
 			</footer>
 		</div>
@@ -83,7 +85,7 @@ export default function RootLayout({ children }) {
 				/>
 				<title>Proper Picks</title>
 			</head>
-			<body>
+			<body className='overflow-x-hidden'>
 				<Provider store={store}>
 					<AuthProvider>
 						<SearchParamsWrapper>

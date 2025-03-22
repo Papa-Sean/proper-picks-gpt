@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useSelector } from 'react-redux';
 import CreateBracketContainer from '@/components/CreateBracketContainer';
-import BracketViewContainer from '@/components/BracketViewContainer';
+import BracketViewContainer from '@/components/bracket/BracketViewContainer';
 import SelectWinner from '@/components/SelectWinner';
 import TournamentRoundContainer from '@/components/TournamentRoundContainer';
 // Fix your import path - use the correct path
