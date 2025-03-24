@@ -4,9 +4,10 @@ import LeaderboardTableRow from './LeaderboardTableRow';
 
 export default function LeaderboardTable({ leaderboard, user }) {
 	return (
-		<div className='overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0'>
+		// Remove the negative margins and adjust padding
+		<div className='w-full overflow-x-auto'>
 			<table className='table table-sm sm:table-md w-full'>
-				<thead>
+				<thead className='hidden'>
 					<tr>
 						<th className='w-10'>Rank</th>
 						<th>Bracket</th>
