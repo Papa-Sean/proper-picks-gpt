@@ -6,7 +6,7 @@ export default function RoundBreakdownTable({
 	user,
 }) {
 	// Define the possible points per round
-	const possiblePointsPerRound = [32, 16, 8, 4, 2, 1].map(
+	const possiblePointsPerRound = [32, 32, 32, 32, 32, 32].map(
 		(games) => games * 1
 	);
 
