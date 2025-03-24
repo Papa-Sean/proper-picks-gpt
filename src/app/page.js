@@ -94,40 +94,42 @@ export default function Home() {
 				<div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 sm:p-8 md:p-10'>
 					{/* About Section */}
 					<section className='mb-12'>
-						<h2 className='text-2xl text-secondary text-center sm:text-3xl font-semibold mb-4'>
-							About Proper Picks
+						<h2 className='text-4xl text-secondary text-center sm:text-3xl font-semibold my-4'>
+							First Weekend Is In The Books!
 						</h2>
-						<p className='text-gray-600 text-justify dark:text-gray-300 mb-4'>
-							Proper Picks is your advanced sports analysis
-							platform that leverages data-driven insights to help
-							you make informed decisions. Whether you're a casual
-							fan or a serious analyst, our platform provides the
-							tools you need to understand the game better. TLDR
-							I'm going to make AI models compete in a March
-							Madness Bracket and present the data, let me know if
-							you would like to help or register so you can see
-							what I find?
-						</p>
+					
+						
+							<div className='mt-4 py-10 flex flex-col'>
+							<h3 className='text-xl text-justify font-semibold mb-4'><span className='text-secondary'>Lesson 1:</span> I had much bigger ideas for the project and hadn't worked out the framework to deliver the "BIG" idea which was a bummer BUT I ended up with a pretty functional "March Madness Office Pool" app in the meantime so I got that going for me.
+							</h3>
+							<h3 className='text-xl text-justify font-semibold mb-4'><span className='text-secondary'>Lesson 2:</span> Make sure your bracket can actually happen? Yep, the data is corrupt because my Final Four / Championship format is wrong... I had a 2/3 shot at getting that wrong, who knew?
+							</h3>
+							<h3 className='text-xl text-justify font-semibold mb-4'><span className='text-secondary'>Lesson 3:</span> This isn't easy, it isn't hard but it's definitely fun so thanks for playing/reading!
+							</h3>
+							</div>
+							<div className="list-col-grow"></div>
+
+						
 					</section>
 
-					{/* Features Grid */}
-					<section className='grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3'>
-						<FeatureCard
-							title='Data Analysis'
-							description='Access comprehensive statistical analysis and trends from historical sports data.'
-						/>
-						<FeatureCard
-							title='Real-time Updates'
-							description='Stay informed with live updates and dynamic predictions as games unfold.'
-						/>
-						<FeatureCard
-							title='Expert Insights'
-							description='Get access to expert commentary and analysis from industry professionals.'
-						/>
-					</section>
-				</div>
+				
+										<section className='grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3'>
+											<FeatureCard
+												title='Data Analysis'
+												description='Access comprehensive statistical analysis and trends from historical sports data.'
+											/>
+											<FeatureCard
+												title='Real-time Updates'
+												description='Stay informed with live updates and dynamic predictions as games unfold.'
+											/>
+											<FeatureCard
+												title={<span className="line-through">Expert Insights</span>}
+												description={<span className="line-through">Get access to expert commentary and analysis from industry professionals.</span>}
+											/>
+										</section>
+									</div>
 
-				{/* Call to Action with Modal */}
+									{/* Call to Action with Modal */}
 				<div className='text-center mt-12'>
 					<p className='text-lg mb-4'>
 						Ready to elevate your sports analysis?
