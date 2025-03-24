@@ -5,7 +5,7 @@ import LeaderboardTableRow from './LeaderboardTableRow';
 export default function LeaderboardTable({ leaderboard, user }) {
 	return (
 		// Remove the negative margins and adjust padding
-		<div className='w-full overflow-x-auto'>
+		<div className='w-full overflow-x-none'>
 			<table className='table table-sm sm:table-md w-full'>
 				<thead className='hidden'>
 					<tr>
