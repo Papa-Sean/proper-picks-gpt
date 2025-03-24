@@ -9,33 +9,29 @@ export default function Home() {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [firstLoad, setFirstLoad] = useState(true);
 	const [modalContent, setModalContent] = useState(null);
+	const [isClient, setIsClient] = useState(false);
 
-	// Check if this is the first time visiting the site in this session
 	useEffect(() => {
-		// Check session storage to see if we've shown the loading animation before
+		setIsClient(true);
 		const hasVisitedBefore = sessionStorage.getItem('hasVisitedHomepage');
 
 		if (hasVisitedBefore) {
 			setFirstLoad(false);
 		} else {
-			// Mark that we've shown the loading animation
 			sessionStorage.setItem('hasVisitedHomepage', 'true');
 		}
 
-		// Cleanup
 		return () => {
-			// If component unmounts, we've definitely visited
 			sessionStorage.setItem('hasVisitedHomepage', 'true');
 		};
 	}, []);
 
-	// Auto-close modal effect
 	useEffect(() => {
 		let closeTimer;
 		if (isModalOpen) {
 			closeTimer = setTimeout(() => {
 				setIsModalOpen(false);
-			}, 10000); // Auto-close after 10 seconds
+			}, 10000);
 		}
 
 		return () => {
@@ -44,7 +40,6 @@ export default function Home() {
 	}, [isModalOpen]);
 
 	const handleDontClick = () => {
-		// Set the content for what should appear after the hacker animation
 		setModalContent(
 			<div className='text-center'>
 				<h3 className='text-xl font-semibold mb-4 dark:text-white'>
@@ -74,13 +69,9 @@ export default function Home() {
 		);
 	};
 
-	// Render the content, wrapped in LoadingWrapper if it's the first load
 	const content = (
 		<div className='min-h-screen bg-base-100 py-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden'>
-			{' '}
-			{/* Main Container */}
 			<div className='max-w-7xl mx-auto'>
-				{/* Hero/Greeting Section */}
 				<div className='text-center mb-12'>
 					<h1 className='text-5xl text-secondary sm:text-5xl md:text-6xl font-bold mb-4'>
 						Welcome to Proper Picks
@@ -90,46 +81,69 @@ export default function Home() {
 					</p>
 				</div>
 
-				{/* Content Section */}
 				<div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 sm:p-8 md:p-10'>
-					{/* About Section */}
 					<section className='mb-12'>
 						<h2 className='text-4xl text-secondary text-center sm:text-3xl font-semibold my-4'>
 							First Weekend Is In The Books!
 						</h2>
-					
-						
-							<div className='mt-4 py-10 flex flex-col'>
-							<h3 className='text-xl text-justify font-semibold mb-4'><span className='text-secondary'>Lesson 1:</span> I had much bigger ideas for the project and hadn't worked out the framework to deliver the "BIG" idea which was a bummer BUT I ended up with a pretty functional "March Madness Office Pool" app in the meantime so I got that going for me.
-							</h3>
-							<h3 className='text-xl text-justify font-semibold mb-4'><span className='text-secondary'>Lesson 2:</span> Make sure your bracket can actually happen? Yep, the data is corrupt because my Final Four / Championship format is wrong... I had a 2/3 shot at getting that wrong, who knew?
-							</h3>
-							<h3 className='text-xl text-justify font-semibold mb-4'><span className='text-secondary'>Lesson 3:</span> This isn't easy, it isn't hard but it's definitely fun so thanks for playing/reading!
-							</h3>
-							</div>
-							<div className="list-col-grow"></div>
 
-						
+						<div className='mt-4 py-10 flex flex-col'>
+							<h3 className='text-xl text-justify font-semibold mb-4'>
+								<span className='text-secondary'>
+									Lesson 1:
+								</span>{' '}
+								I had much bigger ideas for the project and
+								hadn't worked out the framework to deliver the
+								"BIG" idea which was a bummer BUT I ended up
+								with a pretty functional "March Madness Office
+								Pool" app in the meantime so I got that going
+								for me.
+							</h3>
+							<h3 className='text-xl text-justify font-semibold mb-4'>
+								<span className='text-secondary'>
+									Lesson 2:
+								</span>{' '}
+								Make sure your bracket can actually happen? Yep,
+								the data is corrupt because my Final Four /
+								Championship format is wrong... I had a 2/3 shot
+								at getting that wrong, who knew?
+							</h3>
+							<h3 className='text-xl text-justify font-semibold mb-4'>
+								<span className='text-secondary'>
+									Lesson 3:
+								</span>{' '}
+								This isn't easy, it isn't hard but it's
+								definitely fun so thanks for playing/reading!
+							</h3>
+						</div>
+						<div className='list-col-grow'></div>
 					</section>
 
-				
-										<section className='grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3'>
-											<FeatureCard
-												title='Data Analysis'
-												description='Access comprehensive statistical analysis and trends from historical sports data.'
-											/>
-											<FeatureCard
-												title='Real-time Updates'
-												description='Stay informed with live updates and dynamic predictions as games unfold.'
-											/>
-											<FeatureCard
-												title={<span className="line-through">Expert Insights</span>}
-												description={<span className="line-through">Get access to expert commentary and analysis from industry professionals.</span>}
-											/>
-										</section>
-									</div>
+					<section className='grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3'>
+						<FeatureCard
+							title='Data Analysis'
+							description='Access comprehensive statistical analysis and trends from historical sports data.'
+						/>
+						<FeatureCard
+							title='Real-time Updates'
+							description='Stay informed with live updates and dynamic predictions as games unfold.'
+						/>
+						<FeatureCard
+							title={
+								<span className='line-through'>
+									Expert Insights
+								</span>
+							}
+							description={
+								<span className='line-through'>
+									Get access to expert commentary and analysis
+									from industry professionals.
+								</span>
+							}
+						/>
+					</section>
+				</div>
 
-									{/* Call to Action with Modal */}
 				<div className='text-center mt-12'>
 					<p className='text-lg mb-4'>
 						Ready to elevate your sports analysis?
@@ -148,7 +162,6 @@ export default function Home() {
 					</Link>
 				</div>
 
-				{/* Hacker Modal */}
 				{isModalOpen && (
 					<HackerLoadingModal duration={10000}>
 						<div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
@@ -162,10 +175,17 @@ export default function Home() {
 		</div>
 	);
 
-	// If it's the first load, wrap content in LoadingWrapper with 10 seconds duration
-	return firstLoad ? (
-		<LoadingWrapper minLoadTime={10000}>{content}</LoadingWrapper>
+	return isClient ? (
+		firstLoad ? (
+			<LoadingWrapper minLoadTime={10000}>{content}</LoadingWrapper>
+		) : (
+			content
+		)
 	) : (
-		content
+		<div className='min-h-screen bg-base-100 py-8 px-4 sm:px-6 lg:px-8'>
+			<div className='max-w-7xl mx-auto flex items-center justify-center h-screen'>
+				<div className='loading loading-spinner loading-lg'></div>
+			</div>
+		</div>
 	);
 }

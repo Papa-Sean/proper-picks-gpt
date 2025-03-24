@@ -60,7 +60,7 @@ export default function RoundBreakdownTable({
 											tournamentInfo.currentRound ? (
 												<div className='flex flex-col items-center'>
 													<div
-														className='radial-progress text-sm mx-auto'
+														className='radial-progress text-secondary text-sm mx-auto'
 														style={{
 															'--value': Math.min(
 																100,
@@ -70,19 +70,19 @@ export default function RoundBreakdownTable({
 																	]) *
 																	100
 															),
-															'--size': '1.5rem',
+															'--size': '2.5rem',
 															'--thickness':
 																'0.2rem',
 														}}
 													>
-														{Math.round(
+														<span className='relative left-'>{Math.round(
 															(score /
 																possiblePointsPerRound[
 																	index
 																]) *
 																100
 														)}
-														%
+														%</span>
 													</div>
 													<div className='text-xs mt-1'>
 														{score}/
@@ -143,7 +143,7 @@ export default function RoundBreakdownTable({
 											tournamentInfo.currentRound ? (
 												<div className='flex flex-col items-center'>
 													<div
-														className='radial-progress text-xs mx-auto'
+														className='radial-progress text-secondary text-xs mx-auto'
 														style={{
 															'--value': Math.min(
 																100,
@@ -156,7 +156,7 @@ export default function RoundBreakdownTable({
 																	]) *
 																	100
 															),
-															'--size': '1.5rem',
+															'--size': '2.5rem',
 															'--thickness':
 																'0.2rem',
 														}}

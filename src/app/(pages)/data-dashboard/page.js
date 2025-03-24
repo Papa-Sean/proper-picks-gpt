@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import Image from 'next/image';
 import Link from 'next/link';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { db } from '@/config/firebase';
 
 // Create a wrapper component for client-side only features
 function SearchParamsWrapper({ children }) {
@@ -37,6 +39,7 @@ function DashboardContent() {
 		text: 'Loading deadline information...',
 		urgent: false,
 	});
+	const [brackets, setBrackets] = useState([]);
 
 	// Authentication check and redirect
 	useEffect(() => {
@@ -106,6 +109,63 @@ function DashboardContent() {
 			}
 		}
 	}, [mounted]);
+	// Fetch user brackets after auth is confirmed
+	useEffect(() => {
+		// Only run this effect after auth state is determined
+		if (!isAuthenticated) return;
+
+		const fetchUserBrackets = async () => {
+			// Only proceed if auth is no longer loading
+
+			// If no user is logged in, we'll show the login prompt (handled in render)
+			if (!user) return;
+
+			try {
+				// Query Firestore for all of the user's brackets
+				const bracketsRef = collection(db, 'brackets');
+				const q = query(
+					bracketsRef,
+					where('userId', '==', user.uid),
+					orderBy('createdAt', 'desc')
+				);
+
+				console.log('Querying for brackets with userId:', user.uid);
+				const querySnapshot = await getDocs(q);
+
+				// Process brackets
+				const userBrackets = [];
+				querySnapshot.forEach((doc) => {
+					const data = doc.data();
+					userBrackets.push({
+						id: doc.id,
+						name: data.name || 'Unnamed Bracket',
+						createdAt: data.createdAt?.toDate() || new Date(),
+						points: data.points || 0,
+						maxPossible: data.maxPossible || 192,
+						tournamentName:
+							data.tournamentName || 'NCAA Tournament',
+					});
+				});
+
+				console.log(`Found ${userBrackets.length} brackets for user`);
+				setBrackets(userBrackets);
+			} catch (err) {
+				console.error('Error fetching user brackets:', err);
+				setError(
+					`Error loading your brackets: ${
+						err.message || 'Unknown error'
+					}`
+				);
+			}
+		};
+
+		// Only try to find brackets if user is logged in
+		if (user && user.uid) {
+			fetchUserBrackets();
+		} else {
+			console.log('User not authenticated, redirecting to login');
+		}
+	}, [isAuthenticated, user]);
 
 	// Loading state
 	if (!mounted || !isAuthenticated) {
@@ -346,12 +406,21 @@ function DashboardContent() {
 									for this tournament.
 								</p>
 								<div className='card-actions justify-end mt-2'>
-									<Link
-										href='/brackets/view'
-										className='btn btn-sm md:btn-md btn-secondary'
-									>
-										View Brackets
-									</Link>
+									{brackets && brackets.length > 0 ? (
+										<Link
+											href={`/brackets/view/bracketview?id=${brackets[0].id}`}
+											className='btn btn-sm md:btn-md btn-secondary'
+										>
+											View My Bracket
+										</Link>
+									) : (
+										<Link
+											href='/brackets/view'
+											className='btn btn-sm md:btn-md btn-secondary'
+										>
+											View Brackets
+										</Link>
+									)}
 								</div>
 							</div>
 						</div>

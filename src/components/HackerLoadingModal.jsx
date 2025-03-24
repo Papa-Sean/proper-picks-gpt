@@ -8,6 +8,16 @@ export default function HackerLoadingModal({ children, duration = 10000 }) {
 	const [scanPercent, setScanPercent] = useState(0);
 	const [consoleLines, setConsoleLines] = useState([]);
 	const [glitchActive, setGlitchActive] = useState(false);
+	const [randomValues, setRandomValues] = useState([]);
+
+	useEffect(() => {
+		// Set random values only on the client
+		setRandomValues(
+			Array(10)
+				.fill(0)
+				.map(() => Math.random())
+		);
+	}, []);
 
 	// List of fake console outputs for the terminal effect
 	const hackingOutputs = [
@@ -68,7 +78,8 @@ export default function HackerLoadingModal({ children, duration = 10000 }) {
 				setTimeout(() => {
 					addConsoleLine(line);
 					// Occasionally trigger glitch effect
-					if (Math.random() > 0.7) triggerGlitch();
+					if (randomValues[index % randomValues.length] > 0.7)
+						triggerGlitch();
 				}, consoleDelay * (index + 1))
 			);
 		});
@@ -120,7 +131,7 @@ export default function HackerLoadingModal({ children, duration = 10000 }) {
 			timers.forEach((timer) => clearTimeout(timer));
 			clearInterval(progressInterval);
 		};
-	}, [duration, hackingOutputs.length]);
+	}, [duration, hackingOutputs.length, randomValues]);
 
 	if (!loading) {
 		return children;
@@ -146,9 +157,19 @@ export default function HackerLoadingModal({ children, duration = 10000 }) {
 									className='text-green-500 opacity-50 text-xs'
 									style={{
 										animation: `typewriter ${
-											Math.random() * 3 + 1
+											randomValues[
+												(i * 20 + j) %
+													randomValues.length
+											] *
+												3 +
+											1
 										}s infinite`,
-										animationDelay: `${Math.random() * 2}s`,
+										animationDelay: `${
+											randomValues[
+												(i * 20 + j) %
+													randomValues.length
+											] * 2
+										}s`,
 									}}
 								>
 									{generateMatrixCode()}
@@ -224,13 +245,24 @@ export default function HackerLoadingModal({ children, duration = 10000 }) {
 									<div
 										key={i}
 										className={`h-3 ${
-											Math.random() > 0.2
+											randomValues[
+												i % randomValues.length
+											] > 0.2
 												? 'bg-green-500'
 												: 'bg-green-800'
 										} 
-                      ${Math.random() > 0.9 ? 'animate-pulse' : ''}`}
+                      ${
+							randomValues[i % randomValues.length] > 0.9
+								? 'animate-pulse'
+								: ''
+						}`}
 										style={{
-											opacity: Math.random() * 0.5 + 0.5,
+											opacity:
+												randomValues[
+													i % randomValues.length
+												] *
+													0.5 +
+												0.5,
 										}}
 									></div>
 								))}

@@ -44,7 +44,7 @@ export default function CreateBracketPage() {
 			const mockTournament = {
 				id: 'ncaa-2025',
 				name: 'Proper March Madness 2025',
-				submissionDeadline: new Date(2025, 3, 22, 12).toISOString(),
+				submissionDeadline: new Date(2025, 2, 22, 12).toISOString(),
 				teams: dummyTeams,
 				rounds: generateAllRoundsGames(dummyTeams),
 				roundNames: [
