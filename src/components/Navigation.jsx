@@ -154,7 +154,7 @@ export default function Navigation() {
 							href={item.path}
 							requiresAuth={item.requiresAuth}
 							className={
-								isActive(item.path) ? 'active font-bold' : ''
+								isActive(item.path) ? 'btn btn-ghost active border border-secondary font-bold' : 'btn btn-ghost'
 							}
 						>
 							{item.label}
@@ -166,9 +166,9 @@ export default function Navigation() {
 	};
 
 	return (
-		<div className='sticky top-0 z-50 text-secondary'>
+		<div className='sticky top-0 z-50'>
 			{/* Main Navbar - Single Row */}
-			<div className='navbar bg-base-100 shadow-md'>
+			<div className='navbar shadow-md bg-primary text-primary-content'>
 				<div className='container mx-auto px-4 flex items-center justify-between'>
 					{/* Left section with logo */}
 					<div className='flex-none'>
@@ -212,7 +212,7 @@ export default function Navigation() {
 									</label>
 									<ul
 										tabIndex={0}
-										className='mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52 z-10'
+										className='mt-3 p-2 shadow menu menu-compact dropdown-content bg-neutral rounded-box w-52 z-10'
 									>
 										<li>
 											<Link href='/profile'>Profile</Link>

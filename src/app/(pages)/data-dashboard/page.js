@@ -177,7 +177,7 @@ function DashboardContent() {
 	}
 
 	return (
-		<div className='min-h-screen bg-base-100'>
+		<div className='min-h-screen bg-neutral'>
 			{/* Page Header - More compact on mobile */}
 			<div className='text-center py-6 md:py-10 px-4'>
 				<h1 className='text-3xl sm:text-4xl md:text-5xl font-bold mb-2 md:mb-4'>

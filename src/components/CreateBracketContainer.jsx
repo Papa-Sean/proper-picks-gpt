@@ -27,7 +27,7 @@ export default function CreateBracketContainer({
 		<div className='min-h-screen bg-base-200 py-12 px-4 sm:px-6 lg:px-8'>
 			<div className='max-w-95vw mx-auto'>
 				<div className='bg-base-100 shadow-xl rounded-lg overflow-hidden'>
-					<div className='bg-secondary text-secondary-content p-6'>
+					<div className='bg-secondary text-primary p-6'>
 						<h1 className='text-2xl font-bold'>{title}</h1>
 					</div>
 					<div className='p-6'>

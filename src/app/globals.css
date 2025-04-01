@@ -1,6 +1,63 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@plugin "daisyui" {
+	themes: all;
+  }
+@plugin "daisyui/theme" {
+	name: "auburn-tigers";
+	default: true;       /* War Eagle by default! */
+	prefersdark: false;  /* Bright arena lighting */
+	color-scheme: light; /* Classic game-day feel */
+  
+	/* Base colors (arena floors & jerseys) */
+	--color-base-100: #ffffff;       /* Fresh hardwood */
+	--color-base-200: #f5f5f5;       /* Backboard white */
+	--color-base-300: #e5e5e5;       /* Jersey stripes */
+	--color-base-content: #0c2340;   /* Navy blue text */
+  
+	/* Primary (Auburn navy blue - #0C2340) */
+	--color-primary: #0c2340;        /* Tigers navy */
+	--color-primary-content: #dd550c; /* Burnt orange accents */
+  
+	/* Secondary (Auburn burnt orange - #DD550C) */
+	--color-secondary: #dd550c;      /* Tigers orange */
+	--color-secondary-content: #ffffff;
+  
+	/* Accent (Auburn gold - #FFD700 for highlights) */
+	--color-accent: #ffd700;         /* Championship gold */
+	--color-accent-content: #0c2340;
+  
+	/* Neutral (Court lines & shadows) */
+	--color-neutral: #e5e5e5;        /* Rebound gray */
+	--color-neutral-content: #0c2340;
+  
+	/* Status colors (Game stats) */
+	--color-info: #0c2340;           /* Assist blue */
+	--color-info-content: #ffffff;
+	--color-success: #5cb85c;        /* Swish green */
+	--color-success-content: #ffffff;
+	--color-warning: #ffd700;        /* Foul gold */
+	--color-warning-content: #0c2340;
+	--color-error: #e84a27;          /* Turnover red */
+	--color-error-content: #ffffff;
+  
+	/* Border radius (modern arena curves) */
+	--radius-selector: 0.5rem;       /* Basketball smoothness */
+	--radius-field: 0.25rem;
+	--radius-box: 0.75rem;           /* Hoop-rounded corners */
+  
+	/* Base sizes (jersey numbers) */
+	--size-selector: 0.5rem;
+	--size-field: 0.5rem;
+  
+	/* Border size (bold like team spirit) */
+	--border: 2px;
+  
+	/* Effects */
+	--depth: 1;                      /* Dynamic shadows */
+	--noise: 0;                      /* Clean as a three-pointer */
+  }
 @theme {
 	--breakpoint-xs: 480px;
 }
@@ -114,6 +171,22 @@
 
 .animate-green-pulse {
 	animation: pulse-green 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes ping {
+	0% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	75%,
+	100% {
+		transform: scale(2);
+		opacity: 0;
+	}
+}
+
+.animate-ping {
+	animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 /* Terminal scrollbar styling */

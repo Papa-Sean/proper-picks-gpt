@@ -58,11 +58,11 @@ export default function Home() {
 
 	const FeatureCard = ({ title, description }) => {
 		return (
-			<div className='bg-gray-50 dark:bg-gray-700 rounded-lg p-6'>
+			<div className='bg-primary rounded-lg p-6'>
 				<h3 className='text-2xl text-secondary text-center font-semibold mb-2 break-words'>
 					{title}
 				</h3>
-				<p className='text-gray-600 text-justify dark:text-gray-300 break-words'>
+				<p className=' text-justify text-base-300 break-words'>
 					{description}
 				</p>
 			</div>
@@ -70,18 +70,18 @@ export default function Home() {
 	};
 
 	const content = (
-		<div className='min-h-screen bg-base-100 py-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden'>
+		<div className='min-h-screen bg-neutral py-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden'>
 			<div className='max-w-7xl mx-auto'>
 				<div className='text-center mb-12'>
 					<h1 className='text-5xl text-secondary sm:text-5xl md:text-6xl font-bold mb-4'>
 						Welcome to Proper Picks
 					</h1>
-					<p className='text-sm sm:text-2xl text-gray-600 dark:text-gray-300'>
+					<p className='text-sm sm:text-2xl text-primary underline'>
 						Making smart data look dumb since 1984
 					</p>
 				</div>
 
-				<div className='bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 sm:p-8 md:p-10'>
+				<div className='bg-base-300 rounded-lg shadow-xl p-6 sm:p-8 md:p-10'>
 					<section className='mb-12'>
 						<h2 className='text-4xl text-secondary text-center sm:text-3xl font-semibold my-4'>
 							First Weekend Is In The Books!
@@ -165,7 +165,7 @@ export default function Home() {
 				{isModalOpen && (
 					<HackerLoadingModal duration={10000}>
 						<div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
-							<div className='bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-8 w-full max-w-sm mx-auto shadow-xl'>
+							<div className='bg-white dark:bg-base-300 rounded-lg p-4 sm:p-8 w-full max-w-sm mx-auto shadow-xl'>
 								{modalContent}
 							</div>
 						</div>

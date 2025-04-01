@@ -244,7 +244,7 @@ export default function BracketViewPage() {
 						{brackets.map((bracket) => (
 							<div
 								key={bracket.id}
-								className='card bg-base-100 shadow-lg hover:shadow-xl transition-shadow'
+								className='card bg-base-300 shadow-lg hover:shadow-xl transition-shadow'
 							>
 								<div className='card-body'>
 									<h3 className='card-title text-lg font-bold'>

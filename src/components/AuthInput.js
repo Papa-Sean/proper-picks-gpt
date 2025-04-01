@@ -12,7 +12,7 @@ const AuthInput = ({ label, type, name, value, onChange, error }) => {
           onChange={onChange}
           className={`shadow appearance-none border ${
             error ? 'border-red-500' : 'border-gray-300'
-          } rounded w-full py-2 px-3  leading-tight focus:outline-none focus:shadow-outline`}
+          } rounded w-full py-2 px-3 bg-base-100 leading-tight focus:outline-none focus:shadow-outline`}
         />
         {error && <p className="text-red-500 text-xs italic">{error}</p>}
       </div>

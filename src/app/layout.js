@@ -67,7 +67,7 @@ function MainLayout({ children }) {
 			<main className='flex-grow w-full overflow-x-hidden'>
 				{children}
 			</main>
-			<footer className='bg-base-200 py-4 text-center w-full'>
+			<footer className='bg-primary text-primary-content py-4 text-center w-full'>
 				<p>&copy; {new Date().getFullYear()} Proper Picks</p>
 			</footer>
 		</div>
@@ -76,7 +76,10 @@ function MainLayout({ children }) {
 
 export default function RootLayout({ children }) {
 	return (
-		<html lang='en'>
+		<html
+			lang='en'
+			data-theme='auburn-tigers'
+		>
 			<head>
 				<meta charSet='utf-8' />
 				<meta
